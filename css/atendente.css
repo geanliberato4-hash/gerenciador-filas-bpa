@@ -49,31 +49,35 @@ body {
 .seletor-guiche {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   margin-top: 15px;
-  padding: 10px 18px;
-  background: rgba(0, 0, 0, 0.55);
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.7); /* MAIS CONTRASTE */
   backdrop-filter: blur(14px);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  border-radius: 18px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.5);
 }
 
+
 .seletor-guiche label {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: #6cff9a;
+  letter-spacing: 0.8px;
 }
 
 .seletor-guiche select {
   appearance: none;
   background: linear-gradient(135deg, #2ecc71, #27ae60);
-  color: #000;
+  color: #000;                 /* TEXTO PRETO */
   border: none;
-  padding: 10px 40px 10px 14px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
+  padding: 12px 44px 12px 16px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;            /* MAIS DESTAQUE */
   cursor: pointer;
+  outline: none;
+  letter-spacing: 0.5px;
 }
 
 /* seta */
@@ -93,13 +97,16 @@ body {
 
 .seletor-guiche.travado select {
   pointer-events: none;
-  filter: grayscale(.2) brightness(.9);
+  background: linear-gradient(135deg, #27ae60, #1e8449);
+  color: #000;
+  opacity: 0.95;
 }
 
 .seletor-guiche .status {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #6cff9a;
+  letter-spacing: 0.5px;
 }
 
 .seletor-guiche .trocar {
@@ -264,4 +271,81 @@ body {
 /* UTIL */
 .oculto {
   display: none;
+}
+/* ================= TEMPO DE ESPERA ================= */
+
+.senha {
+  position: relative;
+}
+
+.senha.normal {
+  border-left: 4px solid #2ecc71;
+}
+
+.senha.atencao {
+  border-left: 4px solid #f1c40f;
+}
+
+.senha.critico {
+  border-left: 4px solid #e74c3c;
+  animation: alertaPiscando 1.2s infinite;
+}
+
+@keyframes alertaPiscando {
+  0% { opacity: 1; }
+  50% { opacity: 0.75; }
+  100% { opacity: 1; }
+}
+
+.tempo-espera {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+  color: #fff;
+}
+/* ================= BOTÃO REMOVER (DISCRETO) ================= */
+
+.btn-remover {
+  margin-top: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(231, 76, 60, 0.5);
+  background: rgba(231, 76, 60, 0.15);
+  color: #ff6b6b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Hover elegante */
+.btn-remover:hover {
+  background: rgba(231, 76, 60, 0.35);
+  color: #fff;
+  border-color: #e74c3c;
+}
+
+/* Active (clique) */
+.btn-remover:active {
+  transform: scale(0.97);
+}
+
+/* ===== MELHORIA DE LEITURA DO GUICHÊ ATIVO ===== */
+
+.seletor-guiche.travado select {
+  color: #ffffff !important;          /* TEXTO BRANCO */
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* Remove aparência “apagada” */
+.seletor-guiche.travado {
+  opacity: 1;
+}
+
+/* Destaque visual do texto selecionado */
+.seletor-guiche select option:checked {
+  font-weight: 800;
 }
