@@ -66,13 +66,23 @@ function ouvirSenhas() {
       const coluna = document.getElementById(s.atendimento);
       if (!coluna) return;
 
-      const card = document.createElement("div");
-      card.className = "senha";
-      card.innerHTML = `
-        <strong>${s.nome}</strong><br>
-        ${s.placa}
-        <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
-      `;
+      const criadoEm = s.criadoEm || Date.now();
+
+const card = document.createElement("div");
+card.className = "senha normal";
+card.dataset.criado = criadoEm;
+
+card.innerHTML = `
+  <strong>${s.nome}</strong><br>
+  ${s.placa}
+  <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
+
+  <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
+  <button class="btn-remover" onclick="removerSenha('${snap.key}')">
+    Remover
+  </button>
+`;
+
 
       coluna.appendChild(card);
     });
@@ -166,13 +176,17 @@ db.ref(`unidades/${UNIDADE}/historico`)
       const item = document.createElement("div");
       item.className = "item-historico";
       item.innerHTML = `
-        <strong>${h.nome}</strong><br>
-        ${h.placa}<br>
-        <small>${h.atendimento} • ${h.guiche}</small>
-        <button onclick="voltarDoHistorico('${child.key}')">
-          Voltar para fila
-        </button>
-      `;
+  <strong>${h.nome}</strong><br>
+  ${h.placa}<br>
+  <small>${h.atendimento}${h.guiche ? " • " + h.guiche : ""}</small><br>
+  <small>
+    ${h.motivo === "cancelada" ? "❌ Cancelada" : "✔️ Finalizada"}
+  </small>
+
+  <button onclick="voltarDoHistorico('${child.key}')">
+    Voltar para fila
+  </button>
+`;
 
       historicoLista.prepend(item);
     });
@@ -193,3 +207,76 @@ function voltarDoHistorico(key) {
     db.ref(`unidades/${UNIDADE}/historico/${key}`).remove();
   });
 }
+/* ================= TEMPO DE ESPERA DINÂMICO ================= */
+
+function formatarTempo(ms) {
+  const totalSegundos = Math.floor(ms / 1000);
+  const minutos = String(Math.floor(totalSegundos / 60)).padStart(2, "0");
+  const segundos = String(totalSegundos % 60).padStart(2, "0");
+  return `${minutos}:${segundos}`;
+}
+
+function atualizarTempos() {
+  const agora = Date.now();
+
+  document.querySelectorAll(".senha").forEach(card => {
+    let criadoEm = card.dataset.criado;
+
+    if (!criadoEm) return;
+
+    criadoEm = parseInt(criadoEm);
+
+    // Proteção contra timestamp inválido
+    if (criadoEm < 1000000000000) {
+      criadoEm = criadoEm * 1000;
+    }
+
+    const diff = agora - criadoEm;
+
+    const tempoEl = card.querySelector(".tempo-espera");
+    if (tempoEl) {
+     tempoEl.innerText = `⏱️ Aguardando: ${formatarTempo(diff)}`;
+    }
+
+    card.classList.remove("normal", "atencao", "critico");
+
+    if (diff < 5 * 60 * 1000) {
+      card.classList.add("normal");      // verde
+    } else if (diff < 10 * 60 * 1000) {
+      card.classList.add("atencao");     // amarelo
+    } else {
+      card.classList.add("critico");     // vermelho
+    }
+  });
+}
+
+// inicia atualização do tempo de espera a cada 1 segundo
+setInterval(atualizarTempos, 1000);
+function removerSenha(id) {
+  const confirmar = confirm("Deseja remover esta senha da fila?");
+
+  if (!confirmar) return;
+
+  db.ref(`unidades/${UNIDADE}/senhas/${id}`)
+    .once("value")
+    .then(snapshot => {
+      if (!snapshot.exists()) return;
+
+      const s = snapshot.val();
+
+      // Salva no histórico como CANCELADA
+      db.ref(`unidades/${UNIDADE}/historico`).push({
+        nome: s.nome,
+        placa: s.placa,
+        atendimento: s.atendimento,
+        guiche: s.guiche || null,
+        motivo: "cancelada",
+        criadoEm: s.criadoEm || Date.now(),
+        finalizadoEm: Date.now()
+      });
+
+      // Remove da fila (sem chamar)
+      db.ref(`unidades/${UNIDADE}/senhas/${id}`).remove();
+    });
+}
+
