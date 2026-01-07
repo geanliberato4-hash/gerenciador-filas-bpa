@@ -19,7 +19,7 @@ db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
       btn.innerText = fila.nome;
 
       btn.onclick = () => {
-        filaSelecionada = child.key;
+        filaSelecionada = child.key; // ID REAL DA FILA
         document.getElementById("formSenha").style.display = "flex";
       };
 
@@ -40,7 +40,7 @@ function gerarSenha() {
     placa,
     atendimento: filaSelecionada,
     status: "aguardando",
-    criadoEm: Date.now() // ⏱️ NASCE AQUI
+    criadoEm: Date.now() // ⏱️ NASCE AQUI E NUNCA MAIS MUDA
   };
 
   db.ref(`unidades/${UNIDADE}/senhas`).push(senha).then(() => {
