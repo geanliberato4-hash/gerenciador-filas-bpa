@@ -64,9 +64,11 @@ function ouvirSenhas() {
       const coluna = document.getElementById(s.atendimento);
       if (!coluna) return;
 
-      // 🔒 REGRA DE OURO — criadoEm UMA VEZ
-      let criadoEm = s.criadoEm;
-      if (!criadoEm) {
+      let criadoEm = Number(s.criadoEm);
+
+      // 🔐 REGRA DE OURO DEFINITIVA
+      // Se não existir, for inválido ou antigo → recria
+      if (!criadoEm || criadoEm < 1000000000000) {
         criadoEm = Date.now();
         db.ref(`unidades/${UNIDADE}/senhas/${snap.key}/criadoEm`).set(criadoEm);
       }
@@ -88,6 +90,9 @@ function ouvirSenhas() {
 
       coluna.appendChild(card);
     });
+  });
+}
+
 
     // 🔥 FORÇA atualização imediata
     atualizarTempos();
@@ -217,3 +222,4 @@ function removerSenha(id) {
     db.ref(`unidades/${UNIDADE}/senhas/${id}`).remove();
   });
 }
+
