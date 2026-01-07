@@ -195,3 +195,59 @@ function removerSenha(id) {
     db.ref(`unidades/${UNIDADE}/senhas/${id}`).remove();
   });
 }
+/* ================= HISTÓRICO – ÚLTIMAS CHAMADAS ================= */
+db.ref(`unidades/${UNIDADE}/historico`)
+  .limitToLast(10)
+  .on("value", snapshot => {
+    historicoLista.innerHTML = "";
+
+    if (!snapshot.exists()) {
+      historicoLista.innerHTML = "<p style='opacity:.6'>Sem histórico</p>";
+      return;
+    }
+
+    snapshot.forEach(child => {
+      const h = child.val();
+
+      const item = document.createElement("div");
+      item.className = "item-historico";
+
+      const statusIcone =
+        h.motivo === "cancelada"
+          ? "❌ Cancelada"
+          : "✔️ Finalizada";
+
+      item.innerHTML = `
+        <strong>${h.nome}</strong><br>
+        ${h.placa}<br>
+        <small>${h.atendimento}${h.guiche ? " • " + h.guiche : ""}</small><br>
+        <small>${statusIcone}</small>
+
+        <button onclick="voltarDoHistorico('${child.key}')">
+          Voltar para fila
+        </button>
+      `;
+
+      historicoLista.prepend(item);
+    });
+  });
+
+/* ================= VOLTAR DO HISTÓRICO ================= */
+function voltarDoHistorico(key) {
+  db.ref(`unidades/${UNIDADE}/historico/${key}`)
+    .once("value")
+    .then(snapshot => {
+      if (!snapshot.exists()) return;
+      const h = snapshot.val();
+
+      db.ref(`unidades/${UNIDADE}/senhas`).push({
+        nome: h.nome,
+        placa: h.placa,
+        atendimento: h.atendimento,
+        status: "aguardando",
+        criadoEm: Date.now()
+      });
+
+      db.ref(`unidades/${UNIDADE}/historico/${key}`).remove();
+    });
+}
