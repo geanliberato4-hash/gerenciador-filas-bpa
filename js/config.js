@@ -8,5 +8,12 @@ const firebaseConfig = {
   messagingSenderId: "158845933372",
   appId: "1:158845933372:web:491771e52e732bb2277039"
 };
-window.UNIDADE = "BPA";
 
+// Inicializa Firebase apenas uma vez
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+// Globais
+window.db = firebase.database();
+window.UNIDADE = "BPA";
