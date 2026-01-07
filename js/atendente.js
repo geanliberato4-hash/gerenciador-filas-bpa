@@ -35,7 +35,7 @@ btnTrocarGuiche.onclick = () => {
 };
 
 /* ================= CARREGAR FILAS ================= */
-db.ref(`unidades/${UNIDADE}/filas`).once("value").then(snapshot => {
+db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
   filasDiv.innerHTML = "";
 
   snapshot.forEach(f => {
@@ -46,46 +46,47 @@ db.ref(`unidades/${UNIDADE}/filas`).once("value").then(snapshot => {
     coluna.className = "coluna";
     coluna.id = f.key;
     coluna.innerHTML = `<h3>${fila.nome}</h3>`;
+
     filasDiv.appendChild(coluna);
   });
-
-  ouvirSenhas();
 });
 
 /* ================= OUVIR SENHAS ================= */
-function ouvirSenhas() {
-  db.ref(`unidades/${UNIDADE}/senhas`).on("value", snapshot => {
-    document.querySelectorAll(".senha").forEach(el => el.remove());
+db.ref(`unidades/${UNIDADE}/senhas`).on("value", snapshot => {
+  document.querySelectorAll(".senha").forEach(el => el.remove());
 
-    snapshot.forEach(snap => {
-      const s = snap.val();
-      if (!s || s.status !== "aguardando") return;
+  snapshot.forEach(snap => {
+    const s = snap.val();
+    if (!s || s.status !== "aguardando") return;
 
-      const coluna = document.getElementById(s.atendimento);
-      if (!coluna) return;
+    const coluna = document.getElementById(s.atendimento);
+    if (!coluna) return;
 
-      const criadoEm = Number(s.criadoEm);
-      if (!criadoEm) return; // proteção
+    // REGRA DE OURO: criadoEm SEMPRE EXISTE
+    let criadoEm = s.criadoEm;
+    if (!criadoEm) {
+      criadoEm = Date.now();
+      db.ref(`unidades/${UNIDADE}/senhas/${snap.key}/criadoEm`).set(criadoEm);
+    }
 
-      const card = document.createElement("div");
-      card.className = "senha normal";
-      card.dataset.criado = criadoEm;
+    const card = document.createElement("div");
+    card.className = "senha normal";
+    card.dataset.criado = criadoEm;
 
-      card.innerHTML = `
-        <strong>${s.nome}</strong><br>
-        ${s.placa}
-        <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
+    card.innerHTML = `
+      <strong>${s.nome}</strong><br>
+      ${s.placa}
+      <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
 
-        <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
-        <button class="btn-remover" onclick="removerSenha('${snap.key}')">
-          Remover
-        </button>
-      `;
+      <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
+      <button class="btn-remover" onclick="removerSenha('${snap.key}')">
+        Remover
+      </button>
+    `;
 
-      coluna.appendChild(card);
-    });
+    coluna.appendChild(card);
   });
-}
+});
 
 /* ================= CHAMAR ================= */
 function chamarSenha(id) {
@@ -120,6 +121,7 @@ function chamarSenha(id) {
 /* ================= AÇÕES ================= */
 function rechamar() {
   if (!senhaAtualId) return;
+
   db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).update({
     chamadoEm: Date.now(),
     exibidoNaTV: false
@@ -128,9 +130,10 @@ function rechamar() {
 
 function voltarFila() {
   if (!senhaAtualId) return;
-  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).update({
-    status: "aguardando"
-  });
+
+  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`)
+    .update({ status: "aguardando" });
+
   limparAtual();
 }
 
