@@ -64,7 +64,7 @@ function ouvirSenhas() {
       const coluna = document.getElementById(s.atendimento);
       if (!coluna) return;
 
-      // 🔐 REGRA DE OURO DO TEMPO
+      // 🔒 REGRA DE OURO — criadoEm UMA VEZ
       let criadoEm = s.criadoEm;
       if (!criadoEm) {
         criadoEm = Date.now();
@@ -81,11 +81,16 @@ function ouvirSenhas() {
         <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
 
         <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
-        <button class="btn-remover" onclick="removerSenha('${snap.key}')">Remover</button>
+        <button class="btn-remover" onclick="removerSenha('${snap.key}')">
+          Remover
+        </button>
       `;
 
       coluna.appendChild(card);
     });
+
+    // 🔥 FORÇA atualização imediata
+    atualizarTempos();
   });
 }
 
@@ -130,7 +135,9 @@ function rechamar() {
 
 function voltarFila() {
   if (!senhaAtualId) return;
-  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).update({ status: "aguardando" });
+  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).update({
+    status: "aguardando"
+  });
   limparAtual();
 }
 
@@ -174,7 +181,10 @@ function atualizarTempos() {
 
     const diff = agora - criadoEm;
     const tempoEl = card.querySelector(".tempo-espera");
-    if (tempoEl) tempoEl.innerText = `⏱️ Aguardando: ${formatarTempo(diff)}`;
+
+    if (tempoEl) {
+      tempoEl.innerText = `⏱️ Aguardando: ${formatarTempo(diff)}`;
+    }
 
     card.classList.remove("normal", "atencao", "critico");
 
