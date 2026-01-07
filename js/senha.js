@@ -1,5 +1,6 @@
 let filaSelecionada = null;
 
+/* ================= CARREGAR FILAS ================= */
 db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
   const container = document.getElementById("listaFilas");
   container.innerHTML = "";
@@ -12,13 +13,13 @@ db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
   snapshot.forEach(child => {
     const fila = child.val();
 
-    if (fila.ativa) {
+    if (fila && fila.ativa) {
       const btn = document.createElement("button");
       btn.className = "btn-fila";
       btn.innerText = fila.nome;
 
       btn.onclick = () => {
-        filaSelecionada = fila.nome;
+        filaSelecionada = child.key; // 🔐 ID da fila
         document.getElementById("formSenha").style.display = "flex";
       };
 
@@ -27,22 +28,25 @@ db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
   });
 });
 
+/* ================= GERAR SENHA ================= */
 function gerarSenha() {
   const nome = document.getElementById("nome").value.trim();
   const placa = document.getElementById("placa").value.trim();
 
   if (!nome || !placa || !filaSelecionada) return;
 
+  const criadoEm = Date.now(); // ⏱️ NASCE AQUI — REGRA DE OURO
+
   const senha = {
     nome,
     placa,
-    fila: filaSelecionada,
+    atendimento: filaSelecionada, // ✅ campo correto
     status: "aguardando",
-    unidade: UNIDADE,
-    criadoEm: Date.now()
+    criadoEm
   };
 
-  db.ref("senhas").push(senha).then(() => {
+  // 🔐 SALVA NO CAMINHO CERTO
+  db.ref(`unidades/${UNIDADE}/senhas`).push(senha).then(() => {
     document.getElementById("nome").value = "";
     document.getElementById("placa").value = "";
     document.getElementById("formSenha").style.display = "none";
