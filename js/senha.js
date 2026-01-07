@@ -39,7 +39,7 @@ function gerarSenha() {
     placa,
     atendimento: filaSelecionada, // ✅ PADRÃO ÚNICO
     status: "aguardando",
-    criadoEm: Date.now()
+    criadoEm: firebase.database.ServerValue.TIMESTAMP;
   };
 
   // 🔐 CAMINHO CORRETO
@@ -50,3 +50,4 @@ function gerarSenha() {
     filaSelecionada = null;
   });
 }
+
