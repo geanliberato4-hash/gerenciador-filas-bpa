@@ -64,14 +64,8 @@ function ouvirSenhas() {
       const coluna = document.getElementById(s.atendimento);
       if (!coluna) return;
 
-      let criadoEm = Number(s.criadoEm);
-
-      // 🔐 REGRA DE OURO DEFINITIVA
-      // Se não existir, for inválido ou antigo → recria
-      if (!criadoEm || criadoEm < 1000000000000) {
-        criadoEm = Date.now();
-        db.ref(`unidades/${UNIDADE}/senhas/${snap.key}/criadoEm`).set(criadoEm);
-      }
+      const criadoEm = Number(s.criadoEm);
+      if (!criadoEm) return; // proteção
 
       const card = document.createElement("div");
       card.className = "senha normal";
@@ -90,12 +84,6 @@ function ouvirSenhas() {
 
       coluna.appendChild(card);
     });
-  });
-}
-
-
-    // 🔥 FORÇA atualização imediata
-    atualizarTempos();
   });
 }
 
@@ -222,4 +210,3 @@ function removerSenha(id) {
     db.ref(`unidades/${UNIDADE}/senhas/${id}`).remove();
   });
 }
-
