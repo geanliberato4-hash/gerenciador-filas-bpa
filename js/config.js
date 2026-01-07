@@ -9,12 +9,9 @@ const firebaseConfig = {
   appId: "1:158845933372:web:491771e52e732bb2277039"
 };
 
-// Inicializa Firebase (proteção contra duplicar)
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-// 🔴 EXPORTA GLOBALMENTE
 window.db = firebase.database();
 window.UNIDADE = "BPA";
-
