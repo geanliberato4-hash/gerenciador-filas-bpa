@@ -19,7 +19,7 @@ db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
       btn.innerText = fila.nome;
 
       btn.onclick = () => {
-        filaSelecionada = child.key; // 🔐 ID da fila
+        filaSelecionada = child.key;
         document.getElementById("formSenha").style.display = "flex";
       };
 
@@ -35,17 +35,14 @@ function gerarSenha() {
 
   if (!nome || !placa || !filaSelecionada) return;
 
-  const criadoEm = Date.now(); // ⏱️ NASCE AQUI — REGRA DE OURO
-
   const senha = {
     nome,
     placa,
-    atendimento: filaSelecionada, // ✅ campo correto
+    atendimento: filaSelecionada,
     status: "aguardando",
-    criadoEm
+    criadoEm: Date.now() // ⏱️ NASCE AQUI
   };
 
-  // 🔐 SALVA NO CAMINHO CERTO
   db.ref(`unidades/${UNIDADE}/senhas`).push(senha).then(() => {
     document.getElementById("nome").value = "";
     document.getElementById("placa").value = "";
