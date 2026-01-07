@@ -5,16 +5,37 @@ const painelHistorico = document.getElementById("painelHistorico");
 const historicoLista = document.getElementById("listaHistorico");
 const selectGuiche = document.getElementById("guiche");
 
+const boxGuiche = document.getElementById("boxGuiche");
+const statusGuiche = document.getElementById("statusGuiche");
+const btnTrocarGuiche = document.getElementById("btnTrocarGuiche");
+
 let senhaAtualId = null;
 let senhaAtualDados = null;
+let guicheTravado = false;
 
 /* ================= HISTÓRICO ================= */
 function toggleHistorico() {
   painelHistorico.classList.toggle("oculto");
 }
 
+/* ================= GUICHÊ ================= */
+function ativarGuiche() {
+  if (guicheTravado) return;
+  guicheTravado = true;
+  boxGuiche.classList.add("travado", "ativo");
+  statusGuiche.classList.remove("oculto");
+  btnTrocarGuiche.classList.remove("oculto");
+}
+
+btnTrocarGuiche.onclick = () => {
+  guicheTravado = false;
+  boxGuiche.classList.remove("travado", "ativo");
+  statusGuiche.classList.add("oculto");
+  btnTrocarGuiche.classList.add("oculto");
+};
+
 /* ================= CARREGAR FILAS ================= */
-db.ref(`unidades/${UNIDADE}/filas`).once("value").then(snapshot => {
+db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
   filasDiv.innerHTML = "";
 
   snapshot.forEach(f => {
@@ -27,49 +48,44 @@ db.ref(`unidades/${UNIDADE}/filas`).once("value").then(snapshot => {
     coluna.innerHTML = `<h3>${fila.nome}</h3>`;
     filasDiv.appendChild(coluna);
   });
-
-  ouvirSenhas();
 });
 
 /* ================= OUVIR SENHAS ================= */
-function ouvirSenhas() {
-  db.ref(`unidades/${UNIDADE}/senhas`).on("value", snapshot => {
-    document.querySelectorAll(".senha").forEach(el => el.remove());
+db.ref(`unidades/${UNIDADE}/senhas`).on("value", snapshot => {
+  document.querySelectorAll(".senha").forEach(el => el.remove());
 
-    snapshot.forEach(snap => {
-      const s = snap.val();
-      if (!s || s.status !== "aguardando") return;
+  snapshot.forEach(snap => {
+    const s = snap.val();
+    if (!s || s.status !== "aguardando") return;
 
-      const coluna = document.getElementById(s.atendimento);
-      if (!coluna) return;
+    const coluna = document.getElementById(s.atendimento);
+    if (!coluna) return;
 
-      const card = document.createElement("div");
-      card.className = "senha normal";
-      card.dataset.criado = s.criadoEm;
+    const criadoEm = s.criadoEm || Date.now();
 
-      card.innerHTML = `
-        <strong>${s.nome}</strong><br>
-        ${s.placa}
-        <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
+    const card = document.createElement("div");
+    card.className = "senha normal";
+    card.dataset.criado = criadoEm;
 
-       <div class="acoes-senha">
-  <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
+    card.innerHTML = `
+      <strong>${s.nome}</strong><br>
+      ${s.placa}
+      <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
 
-  <button class="btn-remover" onclick="removerSenha('${snap.key}')" title="Remover da fila">
-  🗑️
-</button>
-</div>
-      `;
+      <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
+      <button class="btn-remover" onclick="removerSenha('${snap.key}')">🗑️</button>
+    `;
 
-      coluna.appendChild(card);
-    });
+    coluna.appendChild(card);
   });
-}
+
+  atualizarTempos();
+});
 
 /* ================= CHAMAR ================= */
 function chamarSenha(id) {
-  const guiche = selectGuiche.value;
-  if (!guiche) return;
+  const guicheSelecionado = selectGuiche.value;
+  if (!guicheSelecionado) return;
 
   senhaAtualId = id;
 
@@ -80,15 +96,16 @@ function chamarSenha(id) {
     db.ref(`unidades/${UNIDADE}/senhas/${id}`).update({
       status: "chamando",
       chamadoEm: Date.now(),
-      guiche
+      guiche: guicheSelecionado
     });
 
     dadosAtual.innerHTML = `
       <strong>${senhaAtualDados.nome}</strong><br>
       ${senhaAtualDados.placa}<br>
-      <strong>${guiche}</strong>
+      <strong>${guicheSelecionado}</strong>
     `;
 
+    ativarGuiche();
     atualDiv.classList.remove("oculto");
   });
 }
@@ -110,18 +127,25 @@ function voltarFila() {
 }
 
 function finalizar() {
-  if (!senhaAtualId || !senhaAtualDados) return;
+  if (!senhaAtualId) return;
 
-  db.ref(`unidades/${UNIDADE}/historico`).push({
-    nome: senhaAtualDados.nome,
-    placa: senhaAtualDados.placa,
-    atendimento: senhaAtualDados.atendimento,
-    guiche: senhaAtualDados.guiche,
-    finalizadoEm: Date.now()
+  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).once("value").then(snap => {
+    if (!snap.exists()) return;
+    const s = snap.val();
+
+    db.ref(`unidades/${UNIDADE}/historico`).push({
+      nome: s.nome,
+      placa: s.placa,
+      atendimento: s.atendimento,
+      guiche: s.guiche,
+      motivo: "finalizada",
+      criadoEm: s.criadoEm,
+      finalizadoEm: Date.now()
+    });
+
+    db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).remove();
+    limparAtual();
   });
-
-  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).remove();
-  limparAtual();
 }
 
 function limparAtual() {
@@ -131,77 +155,43 @@ function limparAtual() {
   dadosAtual.innerHTML = "";
 }
 
-/* ================= HISTÓRICO ================= */
-db.ref(`unidades/${UNIDADE}/historico`)
-  .limitToLast(10)
-  .on("value", snapshot => {
-    historicoLista.innerHTML = "";
-
-    snapshot.forEach(child => {
-      const h = child.val();
-
-      const statusIcone = h.motivo === "cancelada" ? "❌" : "✔️";
-      const statusTexto = h.motivo === "cancelada" ? "Cancelada" : "Finalizada";
-
-      const item = document.createElement("div");
-      item.className = `item-historico ${h.motivo === "cancelada" ? "cancelada" : "finalizada"}`;
-
-      item.innerHTML = `
-        <div class="hist-topo">
-          <strong>${statusIcone} ${statusTexto}</strong>
-        </div>
-
-        <div class="hist-info">
-          <span><strong>Nome:</strong> ${h.nome}</span>
-          <span><strong>Placa:</strong> ${h.placa}</span>
-          <span><strong>Fila:</strong> ${h.atendimento}</span>
-          ${h.guiche ? `<span><strong>Guichê:</strong> ${h.guiche}</span>` : ""}
-        </div>
-
-        <button class="btn-voltar" onclick="voltarDoHistorico('${child.key}')">
-          ↩️ Voltar para fila
-        </button>
-      `;
-
-      historicoLista.prepend(item);
-    });
-  });
 /* ================= TEMPO ================= */
-function formatarTempo(ms) {
-  const t = Math.max(0, Math.floor(ms / 1000));
-  const m = String(Math.floor(t / 60)).padStart(2, "0");
-  const s = String(t % 60).padStart(2, "0");
-  return `${m}:${s}`;
+function atualizarTempos() {
+  const agora = Date.now();
+
+  document.querySelectorAll(".senha").forEach(card => {
+    const criadoEm = Number(card.dataset.criado);
+    if (!criadoEm) return;
+
+    const diff = agora - criadoEm;
+    const total = Math.floor(diff / 1000);
+    const m = String(Math.floor(total / 60)).padStart(2, "0");
+    const s = String(total % 60).padStart(2, "0");
+
+    const tempoEl = card.querySelector(".tempo-espera");
+    if (tempoEl) tempoEl.innerText = `⏱️ Aguardando: ${m}:${s}`;
+  });
 }
 
-setInterval(() => {
-  const agora = Date.now();
-  document.querySelectorAll(".senha").forEach(card => {
-    const criado = Number(card.dataset.criado);
-    const el = card.querySelector(".tempo-espera");
-    if (el) el.innerText = `⏱️ Aguardando: ${formatarTempo(agora - criado)}`;
-  });
-}, 1000);
+setInterval(atualizarTempos, 1000);
 
+/* ================= REMOVER ================= */
 function removerSenha(id) {
-  if (!confirm("Deseja remover esta senha da fila?")) return;
+  if (!confirm("Remover senha da fila?")) return;
 
-  db.ref(`unidades/${UNIDADE}/senhas/${id}`).once("value").then(snapshot => {
-    if (!snapshot.exists()) return;
-    const s = snapshot.val();
+  db.ref(`unidades/${UNIDADE}/senhas/${id}`).once("value").then(snap => {
+    if (!snap.exists()) return;
+    const s = snap.val();
 
-    // Salva no histórico como CANCELADA
     db.ref(`unidades/${UNIDADE}/historico`).push({
       nome: s.nome,
       placa: s.placa,
       atendimento: s.atendimento,
-      guiche: s.guiche || null,
       motivo: "cancelada",
       criadoEm: s.criadoEm,
       finalizadoEm: Date.now()
     });
 
-    // Remove sem chamar
     db.ref(`unidades/${UNIDADE}/senhas/${id}`).remove();
   });
 }
