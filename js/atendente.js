@@ -5,35 +5,13 @@ const painelHistorico = document.getElementById("painelHistorico");
 const historicoLista = document.getElementById("listaHistorico");
 const selectGuiche = document.getElementById("guiche");
 
-const boxGuiche = document.getElementById("boxGuiche");
-const statusGuiche = document.getElementById("statusGuiche");
-const btnTrocarGuiche = document.getElementById("btnTrocarGuiche");
-
 let senhaAtualId = null;
 let senhaAtualDados = null;
-let guicheTravado = false;
 
-/* ================= TOGGLE HISTÓRICO ================= */
+/* ================= HISTÓRICO ================= */
 function toggleHistorico() {
   painelHistorico.classList.toggle("oculto");
 }
-
-/* ================= GUICHÊ ================= */
-function ativarGuiche() {
-  if (guicheTravado) return;
-
-  guicheTravado = true;
-  boxGuiche.classList.add("travado", "ativo");
-  statusGuiche.classList.remove("oculto");
-  btnTrocarGuiche.classList.remove("oculto");
-}
-
-btnTrocarGuiche.onclick = () => {
-  guicheTravado = false;
-  boxGuiche.classList.remove("travado", "ativo");
-  statusGuiche.classList.add("oculto");
-  btnTrocarGuiche.classList.add("oculto");
-};
 
 /* ================= CARREGAR FILAS ================= */
 db.ref(`unidades/${UNIDADE}/filas`).once("value").then(snapshot => {
@@ -47,7 +25,6 @@ db.ref(`unidades/${UNIDADE}/filas`).once("value").then(snapshot => {
     coluna.className = "coluna";
     coluna.id = f.key;
     coluna.innerHTML = `<h3>${fila.nome}</h3>`;
-
     filasDiv.appendChild(coluna);
   });
 
@@ -66,57 +43,46 @@ function ouvirSenhas() {
       const coluna = document.getElementById(s.atendimento);
       if (!coluna) return;
 
-      const criadoEm = s.criadoEm || Date.now();
+      const card = document.createElement("div");
+      card.className = "senha normal";
+      card.dataset.criado = s.criadoEm;
 
-const card = document.createElement("div");
-card.className = "senha normal";
-card.dataset.criado = criadoEm;
+      card.innerHTML = `
+        <strong>${s.nome}</strong><br>
+        ${s.placa}
+        <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
 
-card.innerHTML = `
-  <strong>${s.nome}</strong><br>
-  ${s.placa}
-  <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
-
-  <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
-  <button class="btn-remover" onclick="removerSenha('${snap.key}')">
-    Remover
-  </button>
-`;
-
+        <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
+      `;
 
       coluna.appendChild(card);
     });
   });
 }
 
-/* ================= CHAMAR SENHA ================= */
+/* ================= CHAMAR ================= */
 function chamarSenha(id) {
-  const guicheSelecionado = selectGuiche.value;
-  if (!guicheSelecionado) return;
+  const guiche = selectGuiche.value;
+  if (!guiche) return;
 
   senhaAtualId = id;
 
   db.ref(`unidades/${UNIDADE}/senhas/${id}`).once("value").then(snap => {
     if (!snap.exists()) return;
-
     senhaAtualDados = snap.val();
 
     db.ref(`unidades/${UNIDADE}/senhas/${id}`).update({
-  status: "chamando",
-  chamadoEm: Date.now(),
-  guiche: guicheSelecionado,
-  exibidoNaTV: false
-});
-
+      status: "chamando",
+      chamadoEm: Date.now(),
+      guiche
+    });
 
     dadosAtual.innerHTML = `
       <strong>${senhaAtualDados.nome}</strong><br>
       ${senhaAtualDados.placa}<br>
-      <small>${senhaAtualDados.atendimento}</small><br>
-      <strong>${guicheSelecionado}</strong>
+      <strong>${guiche}</strong>
     `;
 
-    ativarGuiche(); // ✅ AGORA FUNCIONA
     atualDiv.classList.remove("oculto");
   });
 }
@@ -124,21 +90,16 @@ function chamarSenha(id) {
 /* ================= AÇÕES ================= */
 function rechamar() {
   if (!senhaAtualId) return;
-
   db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).update({
-    status: "chamando",
-    chamadoEm: Date.now(),
-    exibidoNaTV: false
+    chamadoEm: Date.now()
   });
 }
 
-
 function voltarFila() {
   if (!senhaAtualId) return;
-
-  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`)
-    .update({ status: "aguardando" });
-
+  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).update({
+    status: "aguardando"
+  });
   limparAtual();
 }
 
@@ -149,7 +110,7 @@ function finalizar() {
     nome: senhaAtualDados.nome,
     placa: senhaAtualDados.placa,
     atendimento: senhaAtualDados.atendimento,
-    guiche: selectGuiche.value,
+    guiche: senhaAtualDados.guiche,
     finalizadoEm: Date.now()
   });
 
@@ -169,114 +130,27 @@ db.ref(`unidades/${UNIDADE}/historico`)
   .limitToLast(10)
   .on("value", snapshot => {
     historicoLista.innerHTML = "";
-
     snapshot.forEach(child => {
       const h = child.val();
-
-      const item = document.createElement("div");
-      item.className = "item-historico";
-      item.innerHTML = `
-  <strong>${h.nome}</strong><br>
-  ${h.placa}<br>
-  <small>${h.atendimento}${h.guiche ? " • " + h.guiche : ""}</small><br>
-  <small>
-    ${h.motivo === "cancelada" ? "❌ Cancelada" : "✔️ Finalizada"}
-  </small>
-
-  <button onclick="voltarDoHistorico('${child.key}')">
-    Voltar para fila
-  </button>
-`;
-
-      historicoLista.prepend(item);
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${h.nome}</strong><br>${h.placa}`;
+      historicoLista.prepend(div);
     });
   });
 
-function voltarDoHistorico(key) {
-  db.ref(`unidades/${UNIDADE}/historico/${key}`).once("value").then(snap => {
-    const h = snap.val();
-
-    db.ref(`unidades/${UNIDADE}/senhas`).push({
-      nome: h.nome,
-      placa: h.placa,
-      atendimento: h.atendimento,
-      status: "aguardando",
-      criadoEm: Date.now()
-    });
-
-    db.ref(`unidades/${UNIDADE}/historico/${key}`).remove();
-  });
-}
-/* ================= TEMPO DE ESPERA DINÂMICO ================= */
-
+/* ================= TEMPO ================= */
 function formatarTempo(ms) {
-  const totalSegundos = Math.floor(ms / 1000);
-  const minutos = String(Math.floor(totalSegundos / 60)).padStart(2, "0");
-  const segundos = String(totalSegundos % 60).padStart(2, "0");
-  return `${minutos}:${segundos}`;
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const m = String(Math.floor(t / 60)).padStart(2, "0");
+  const s = String(t % 60).padStart(2, "0");
+  return `${m}:${s}`;
 }
 
-function atualizarTempos() {
+setInterval(() => {
   const agora = Date.now();
-
   document.querySelectorAll(".senha").forEach(card => {
-    let criadoEm = card.dataset.criado;
-
-    if (!criadoEm) return;
-
-    criadoEm = parseInt(criadoEm);
-
-    // Proteção contra timestamp inválido
-    if (criadoEm < 1000000000000) {
-      criadoEm = criadoEm * 1000;
-    }
-
-    const diff = agora - criadoEm;
-
-    const tempoEl = card.querySelector(".tempo-espera");
-    if (tempoEl) {
-     tempoEl.innerText = `⏱️ Aguardando: ${formatarTempo(diff)}`;
-    }
-
-    card.classList.remove("normal", "atencao", "critico");
-
-    if (diff < 5 * 60 * 1000) {
-      card.classList.add("normal");      // verde
-    } else if (diff < 10 * 60 * 1000) {
-      card.classList.add("atencao");     // amarelo
-    } else {
-      card.classList.add("critico");     // vermelho
-    }
+    const criado = Number(card.dataset.criado);
+    const el = card.querySelector(".tempo-espera");
+    if (el) el.innerText = `⏱️ Aguardando: ${formatarTempo(agora - criado)}`;
   });
-}
-
-// inicia atualização do tempo de espera a cada 1 segundo
-setInterval(atualizarTempos, 1000);
-function removerSenha(id) {
-  const confirmar = confirm("Deseja remover esta senha da fila?");
-
-  if (!confirmar) return;
-
-  db.ref(`unidades/${UNIDADE}/senhas/${id}`)
-    .once("value")
-    .then(snapshot => {
-      if (!snapshot.exists()) return;
-
-      const s = snapshot.val();
-
-      // Salva no histórico como CANCELADA
-      db.ref(`unidades/${UNIDADE}/historico`).push({
-        nome: s.nome,
-        placa: s.placa,
-        atendimento: s.atendimento,
-        guiche: s.guiche || null,
-        motivo: "cancelada",
-        criadoEm: s.criadoEm || Date.now(),
-        finalizadoEm: Date.now()
-      });
-
-      // Remove da fila (sem chamar)
-      db.ref(`unidades/${UNIDADE}/senhas/${id}`).remove();
-    });
-}
-
+}, 1000);
