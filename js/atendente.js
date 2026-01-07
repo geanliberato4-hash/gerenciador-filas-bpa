@@ -21,6 +21,7 @@ function toggleHistorico() {
 /* ================= GUICHÊ ================= */
 function ativarGuiche() {
   if (guicheTravado) return;
+
   guicheTravado = true;
   boxGuiche.classList.add("travado", "ativo");
   statusGuiche.classList.remove("oculto");
@@ -46,7 +47,6 @@ db.ref(`unidades/${UNIDADE}/filas`).on("value", snapshot => {
     coluna.className = "coluna";
     coluna.id = f.key;
     coluna.innerHTML = `<h3>${fila.nome}</h3>`;
-
     filasDiv.appendChild(coluna);
   });
 });
@@ -60,28 +60,18 @@ db.ref(`unidades/${UNIDADE}/senhas`).on("value", snapshot => {
     if (!s || s.status !== "aguardando") return;
 
     const coluna = document.getElementById(s.atendimento);
-    if (!coluna) return;
-
-    // REGRA DE OURO: criadoEm SEMPRE EXISTE
-    let criadoEm = s.criadoEm;
-    if (!criadoEm) {
-      criadoEm = Date.now();
-      db.ref(`unidades/${UNIDADE}/senhas/${snap.key}/criadoEm`).set(criadoEm);
-    }
+    if (!coluna || !s.criadoEm) return;
 
     const card = document.createElement("div");
     card.className = "senha normal";
-    card.dataset.criado = criadoEm;
+    card.dataset.criado = s.criadoEm;
 
     card.innerHTML = `
       <strong>${s.nome}</strong><br>
       ${s.placa}
       <div class="tempo-espera">⏱️ Aguardando: 00:00</div>
-
       <button onclick="chamarSenha('${snap.key}')">CHAMAR</button>
-      <button class="btn-remover" onclick="removerSenha('${snap.key}')">
-        Remover
-      </button>
+      <button class="btn-remover" onclick="removerSenha('${snap.key}')">Remover</button>
     `;
 
     coluna.appendChild(card);
@@ -118,54 +108,11 @@ function chamarSenha(id) {
   });
 }
 
-/* ================= AÇÕES ================= */
-function rechamar() {
-  if (!senhaAtualId) return;
-
-  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).update({
-    chamadoEm: Date.now(),
-    exibidoNaTV: false
-  });
-}
-
-function voltarFila() {
-  if (!senhaAtualId) return;
-
-  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`)
-    .update({ status: "aguardando" });
-
-  limparAtual();
-}
-
-function finalizar() {
-  if (!senhaAtualId || !senhaAtualDados) return;
-
-  db.ref(`unidades/${UNIDADE}/historico`).push({
-    nome: senhaAtualDados.nome,
-    placa: senhaAtualDados.placa,
-    atendimento: senhaAtualDados.atendimento,
-    guiche: selectGuiche.value,
-    finalizadoEm: Date.now()
-  });
-
-  db.ref(`unidades/${UNIDADE}/senhas/${senhaAtualId}`).remove();
-  limparAtual();
-}
-
-function limparAtual() {
-  senhaAtualId = null;
-  senhaAtualDados = null;
-  atualDiv.classList.add("oculto");
-  dadosAtual.innerHTML = "";
-}
-
 /* ================= TEMPO DE ESPERA ================= */
 function formatarTempo(ms) {
   if (ms < 0) ms = 0;
   const total = Math.floor(ms / 1000);
-  const m = String(Math.floor(total / 60)).padStart(2, "0");
-  const s = String(total % 60).padStart(2, "0");
-  return `${m}:${s}`;
+  return `${String(Math.floor(total / 60)).padStart(2,"0")}:${String(total % 60).padStart(2,"0")}`;
 }
 
 function atualizarTempos() {
@@ -176,23 +123,19 @@ function atualizarTempos() {
     if (!criadoEm) return;
 
     const diff = agora - criadoEm;
-    const tempoEl = card.querySelector(".tempo-espera");
+    card.querySelector(".tempo-espera").innerText =
+      `⏱️ Aguardando: ${formatarTempo(diff)}`;
 
-    if (tempoEl) {
-      tempoEl.innerText = `⏱️ Aguardando: ${formatarTempo(diff)}`;
-    }
-
-    card.classList.remove("normal", "atencao", "critico");
-
-    if (diff < 5 * 60 * 1000) card.classList.add("normal");
-    else if (diff < 10 * 60 * 1000) card.classList.add("atencao");
+    card.classList.remove("normal","atencao","critico");
+    if (diff < 5*60000) card.classList.add("normal");
+    else if (diff < 10*60000) card.classList.add("atencao");
     else card.classList.add("critico");
   });
 }
 
 setInterval(atualizarTempos, 1000);
 
-/* ================= REMOVER SENHA ================= */
+/* ================= REMOVER ================= */
 function removerSenha(id) {
   if (!confirm("Deseja remover esta senha da fila?")) return;
 
@@ -204,7 +147,6 @@ function removerSenha(id) {
       nome: s.nome,
       placa: s.placa,
       atendimento: s.atendimento,
-      guiche: s.guiche || null,
       motivo: "cancelada",
       criadoEm: s.criadoEm,
       finalizadoEm: Date.now()
