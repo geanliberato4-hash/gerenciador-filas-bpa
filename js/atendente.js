@@ -251,3 +251,46 @@ function voltarDoHistorico(key) {
       db.ref(`unidades/${UNIDADE}/historico/${key}`).remove();
     });
 }
+
+/* ================= TEMPO DE ESPERA (CORES) ================= */
+
+function formatarTempo(ms) {
+  if (ms < 0) ms = 0;
+
+  const totalSegundos = Math.floor(ms / 1000);
+  const minutos = String(Math.floor(totalSegundos / 60)).padStart(2, "0");
+  const segundos = String(totalSegundos % 60).padStart(2, "0");
+
+  return `${minutos}:${segundos}`;
+}
+
+function atualizarTempos() {
+  const agora = Date.now();
+
+  document.querySelectorAll(".senha").forEach(card => {
+    const criadoEm = Number(card.dataset.criado);
+    if (!criadoEm) return;
+
+    const diff = agora - criadoEm;
+
+    const tempoEl = card.querySelector(".tempo-espera");
+    if (tempoEl) {
+      tempoEl.innerText = `⏱️ Aguardando: ${formatarTempo(diff)}`;
+    }
+
+    // remove cores antigas
+    card.classList.remove("normal", "atencao", "critico");
+
+    // regras de cor
+    if (diff < 5 * 60 * 1000) {
+      card.classList.add("normal");   // 🟢 até 5 min
+    } else if (diff < 10 * 60 * 1000) {
+      card.classList.add("atencao");  // 🟡 5 a 10 min
+    } else {
+      card.classList.add("critico");  // 🔴 acima de 10 min
+    }
+  });
+}
+
+// ⏱️ atualiza a cada 1 segundo
+setInterval(atualizarTempos, 1000);
