@@ -44,7 +44,6 @@
       <div class="ok-icone">✔</div>
       <h1 class="ok-titulo">Senha gerada!</h1>
       <p class="ok-dados" id="okDados"></p>
-      <p class="ok-posicao" id="okPosicao"></p>
       <p class="ok-texto">Aguarde. Você será chamado pelo nome e placa no painel.</p>
     </div>
 
@@ -169,15 +168,8 @@
           }
           return refSenhas.push(senha);
         })
-        .then(() => refSenhas.once("value"))
-        .then(snap => {
-          // posição na fila deste atendimento
-          let posicao = 0;
-          snap.forEach(c => {
-            const s = c.val();
-            if (s && s.atendimento === atendimento && s.status === "aguardando") posicao++;
-          });
-          mostrarConfirmacao(nome, placa, posicao);
+        .then(() => {
+          mostrarConfirmacao(nome, placa);
         })
         .catch(err => {
           if (err && err.duplicada) {
@@ -196,12 +188,10 @@
         });
     }
 
-    function mostrarConfirmacao(nome, placa, posicao) {
+    function mostrarConfirmacao(nome, placa) {
       document.getElementById("cardForm").classList.add("oculto");
       document.getElementById("cardOk").classList.remove("oculto");
       document.getElementById("okDados").innerText = `${nome} • ${placa}`;
-      document.getElementById("okPosicao").innerText =
-        posicao > 0 ? `Sua posição na fila: ${posicao}º` : "";
 
       setTimeout(() => {
         localStorage.removeItem("atendimentoKey");
