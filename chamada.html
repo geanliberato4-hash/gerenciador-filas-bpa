@@ -4,13 +4,18 @@
   <meta charset="UTF-8">
   <title>Chamada de Senhas • BPA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
   <style>
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       overflow: hidden;
       background: black;
-      font-family: Arial, sans-serif;
+      font-family: 'Poppins', Arial, sans-serif;
+      color: #fff;
+      cursor: none;
     }
 
     video {
@@ -27,6 +32,18 @@
       background: rgba(0,0,0,0.55);
     }
 
+    /* RELÓGIO */
+    .relogio {
+      position: fixed;
+      top: 3vh;
+      right: 3vw;
+      font-size: 4vh;
+      font-weight: 600;
+      text-shadow: 0 2px 10px rgba(0,0,0,.7);
+      z-index: 5;
+    }
+
+    /* CHAMADA */
     .chamada {
       position: fixed;
       inset: 0;
@@ -34,26 +51,95 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      color: #fff;
       z-index: 10;
     }
 
     .card {
-      background: rgba(0,0,0,0.75);
-      padding: 40px 60px;
+      background: rgba(0,0,0,0.78);
+      padding: 5vh 6vw;
       border-radius: 25px;
+      border: 2px solid rgba(108,255,154,.5);
       box-shadow: 0 30px 80px rgba(0,0,0,.7);
+      max-width: 90vw;
+      animation: entrar .5s ease, pulsar 1.4s ease 3;
+    }
+
+    @keyframes entrar {
+      from { transform: scale(.85); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    @keyframes pulsar {
+      0%, 100% { box-shadow: 0 30px 80px rgba(0,0,0,.7); }
+      50%      { box-shadow: 0 0 0 12px rgba(108,255,154,.35), 0 30px 80px rgba(0,0,0,.7); }
     }
 
     .card h1 {
-      font-size: 52px;
+      font-size: clamp(36px, 7vh, 80px);
       color: #6cff9a;
-      margin-bottom: 20px;
+      margin: 0 0 2vh;
+      word-break: break-word;
     }
 
     .card p {
-      font-size: 36px;
-      margin: 10px 0;
+      font-size: clamp(24px, 4.5vh, 52px);
+      margin: 1vh 0;
+    }
+
+    .card .guiche {
+      font-weight: 800;
+      color: #ffe066;
+    }
+
+    /* ÚLTIMAS CHAMADAS */
+    .ultimas {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      gap: 2vw;
+      justify-content: center;
+      padding: 2vh 3vw;
+      background: linear-gradient(transparent, rgba(0,0,0,.85));
+      z-index: 5;
+    }
+
+    .ultimas .item {
+      background: rgba(0,0,0,.6);
+      border-radius: 14px;
+      padding: 1.2vh 1.6vw;
+      font-size: 2.2vh;
+      text-align: center;
+      min-width: 14vw;
+    }
+
+    .ultimas .item b {
+      display: block;
+      font-size: 2.6vh;
+    }
+
+    /* ATIVAR SOM */
+    .ativar-som {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: rgba(0,0,0,.8);
+      z-index: 100;
+      cursor: pointer;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .ativar-som small {
+      font-size: 16px;
+      font-weight: 400;
+      opacity: .7;
     }
   </style>
 </head>
@@ -61,19 +147,30 @@
 <body>
 
   <!-- VÍDEO DE FUNDO -->
-  <video autoplay loop muted>
+  <video autoplay loop muted playsinline>
     <source src="video/fundo.mp4" type="video/mp4">
   </video>
 
   <div class="overlay"></div>
 
+  <div class="relogio" id="relogio"></div>
+
   <!-- CHAMADA -->
   <div class="chamada" id="chamada">
-    <div class="card">
+    <div class="card" id="card">
       <h1 id="nome"></h1>
       <p id="placa"></p>
-      <p id="guiche"></p>
+      <p id="guiche" class="guiche"></p>
     </div>
+  </div>
+
+  <!-- ÚLTIMAS CHAMADAS -->
+  <div class="ultimas" id="ultimas"></div>
+
+  <!-- Só aparece se o navegador bloquear o som (computador sem o atalho configurado) -->
+  <div class="ativar-som" id="ativarSom" style="display:none">
+    🔊 Toque na tela para liberar o som das chamadas
+    <small>O navegador bloqueou o som. Para não aparecer mais, abra esta tela pelo atalho "abrir-tela-chamada"</small>
   </div>
 
   <!-- Firebase -->

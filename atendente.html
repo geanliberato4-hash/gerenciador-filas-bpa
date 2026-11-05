@@ -5,7 +5,7 @@
   <title>Painel do Atendente • BPA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/atendente.css">
 </head>
 
@@ -15,47 +15,69 @@
   <div class="overlay"></div>
 
   <header class="topo">
-    <h1>Painel do Atendente</h1>
-    <p>Unidade BPA • Gerenciamento de filas</p>
+    <div class="topo-titulo">
+      <h1>Painel do Atendente</h1>
+      <p>Unidade BPA • Gerenciamento de filas</p>
+    </div>
 
-    <!-- SELETOR DE GUICHÊ -->
-   <div class="seletor-guiche" id="boxGuiche">
-  <label for="guiche">Guichê:</label>
-  <select id="guiche">
-    <option value="Guichê 1">Guichê 1</option>
-    <option value="Guichê 2">Guichê 2</option>
-  </select>
+    <div class="topo-info">
+      <!-- SELETOR DE GUICHÊ -->
+      <div class="seletor-guiche" id="boxGuiche">
+        <label for="guiche">Guichê:</label>
+        <select id="guiche">
+          <option value="Guichê 1">Guichê 1</option>
+          <option value="Guichê 2">Guichê 2</option>
+        </select>
 
-  <span class="status oculto" id="statusGuiche">Ativo</span>
-  <button class="trocar oculto" id="btnTrocarGuiche">Trocar</button>
-</div>
+        <span class="status oculto" id="statusGuiche">Ativo</span>
+        <button class="trocar oculto" id="btnTrocarGuiche" type="button">Trocar</button>
+      </div>
 
+      <div class="resumo" id="resumo" title="Total de senhas aguardando">
+        <span id="totalAguardando">0</span> aguardando
+      </div>
+
+      <button class="btn-avisos" id="btnAvisos" type="button" title="Receber aviso de senha nova quando estiver em outra tela">🔔 Ativar avisos</button>
+
+      <span class="conexao" id="conexao">Conectando…</span>
+    </div>
+  </header>
+
+  <main class="conteudo">
+
+    <!-- EM ATENDIMENTO (todos os guichês) -->
+    <section id="emAtendimento" class="em-atendimento oculto"></section>
 
     <!-- FILAS -->
-    <section id="filas" class="filas"></section>
-
-    <!-- ATENDIMENTO ATUAL -->
-    <section id="atual" class="atual oculto">
-      <h2>Atendimento em andamento</h2>
-      <div id="dadosAtual"></div>
-
-      <div class="acoes">
-        <button class="btn rechamar" onclick="rechamar()">Rechamar</button>
-        <button class="btn voltar" onclick="voltarFila()">Voltar para fila</button>
-        <button class="btn finalizar" onclick="finalizar()">Encerrar atendimento</button>
-      </div>
-    </section>
-
-    <!-- HISTÓRICO -->
-    <section class="historico">
-      <button class="toggle" onclick="toggleHistorico()">📋 Últimas chamadas</button>
-
-      <div id="painelHistorico" class="lista oculto">
-        <div id="listaHistorico"></div>
-      </div>
+    <section id="filas" class="filas">
+      <p class="vazio-geral">Carregando filas…</p>
     </section>
 
   </main>
+
+  <!-- ATENDIMENTO ATUAL -->
+  <section id="atual" class="atual oculto" aria-live="polite">
+    <h2>Atendimento em andamento</h2>
+    <div id="dadosAtual"></div>
+
+    <div class="acoes">
+      <button class="btn rechamar" type="button" onclick="rechamar()">Rechamar</button>
+      <button class="btn voltar" type="button" onclick="voltarFila()">Voltar para fila</button>
+      <button class="btn finalizar" type="button" onclick="finalizar()">Encerrar</button>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section class="historico">
+    <button class="toggle" type="button" onclick="toggleHistorico()">📋 Últimas chamadas</button>
+
+    <div id="painelHistorico" class="lista oculto">
+      <div id="listaHistorico"></div>
+    </div>
+  </section>
+
+  <!-- AVISOS -->
+  <div id="aviso" class="aviso oculto" role="status"></div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
