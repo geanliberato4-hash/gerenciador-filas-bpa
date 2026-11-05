@@ -146,3 +146,74 @@ body {
   }
 }
 
+
+/* ================= MELHORIAS ================= */
+.oculto { display: none !important; }
+
+.input-placa {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+.btn-fila:disabled {
+  opacity: .6;
+  cursor: wait;
+  transform: none;
+}
+
+.msg {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(231, 76, 60, .2);
+  border: 1px solid rgba(231, 76, 60, .6);
+  color: #ffb3ab;
+  font-size: 14px;
+}
+
+.link-voltar {
+  display: inline-block;
+  margin-top: 16px;
+  color: rgba(255,255,255,.7);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.link-voltar:hover { color: #fff; }
+
+.ok-icone {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1db954, #0f9d58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+
+.ok-titulo { font-size: 26px; margin-bottom: 8px; }
+.ok-dados  { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.ok-posicao { font-size: 20px; color: #6cff9a; font-weight: 600; margin-bottom: 12px; }
+.ok-texto  { font-size: 14px; color: #b5ffcf; }
+
+@media (max-height: 640px) {
+  body { overflow: auto; }
+  .container { height: auto; min-height: 100vh; gap: 24px; }
+}
+
+/* VALIDAÇÃO DA PLACA */
+.input-placa { margin-bottom: 6px; }
+.input-placa.valida   { border-color: #1db954; }
+.input-placa.invalida { border-color: #e74c3c; box-shadow: 0 0 0 2px rgba(231,76,60,.3); }
+
+.dica-placa {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: rgba(255,255,255,.6);
+  text-align: left;
+}
+
