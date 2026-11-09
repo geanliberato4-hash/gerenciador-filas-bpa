@@ -84,14 +84,35 @@ function toggleHistorico() {
 }
 
 /* ================= GUICHÊ ================= */
+// A lista de guichês vem da área do administrador (em tempo real).
+// Enquanto o admin não cadastrar nenhum, usa Guichê 1 e Guichê 2.
+const GUICHES_PADRAO = ["Guichê 1", "Guichê 2"];
 
-// Lembra o guichê escolhido neste computador
-try {
-  const salvo = localStorage.getItem("guicheAtendente");
-  if (salvo && [...selectGuiche.options].some(o => o.value === salvo)) {
-    selectGuiche.value = salvo;
-  }
-} catch (e) { /* sem localStorage */ }
+function guicheSalvo() {
+  try { return localStorage.getItem("guicheAtendente"); } catch (e) { return null; }
+}
+
+function montarGuiches(nomes) {
+  const atual = guicheTravado ? selectGuiche.value : (selectGuiche.value || guicheSalvo());
+  const lista = nomes.slice();
+  // guichê em uso (travado) continua na lista mesmo se o admin mudou algo
+  if (guicheTravado && atual && !lista.includes(atual)) lista.push(atual);
+  selectGuiche.innerHTML = lista.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  const preferido = [atual, guicheSalvo()].find(n => n && lista.includes(n));
+  if (preferido) selectGuiche.value = preferido;
+}
+
+montarGuiches(GUICHES_PADRAO);
+
+db.ref(`${refBase}/guiches`).on("value", snap => {
+  const lista = [];
+  snap.forEach(c => {
+    const g = c.val();
+    if (g && g.ativo && g.nome) lista.push({ nome: g.nome, ordem: typeof g.ordem === "number" ? g.ordem : 999 });
+  });
+  lista.sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome, "pt-BR"));
+  montarGuiches(lista.length ? lista.map(g => g.nome) : GUICHES_PADRAO);
+});
 
 selectGuiche.addEventListener("change", () => {
   try { localStorage.setItem("guicheAtendente", selectGuiche.value); } catch (e) {}
@@ -124,8 +145,10 @@ db.ref(`${refBase}/filas`).on("value", snapshot => {
   snapshot.forEach(f => {
     const fila = f.val();
     if (!fila || !fila.ativa) return;
-    filas.push({ key: f.key, nome: fila.nome || f.key });
+    filas.push({ key: f.key, nome: fila.nome || f.key, ordem: typeof fila.ordem === "number" ? fila.ordem : 999 });
   });
+  // mesma ordem definida na área do administrador
+  filas.sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome, "pt-BR"));
   filasCarregadas = true;
   renderizar();
 });
@@ -268,7 +291,7 @@ function restaurarAtendimento() {
   if (restauracaoFeita || senhaAtualId) return;
   restauracaoFeita = true;
 
-  const guiche = selectGuiche.value;
+  const guiche = guicheSalvo() || selectGuiche.value;
   const emAndamento = Object.entries(senhas)
     .filter(([, s]) => s.status === "chamando" && s.guiche === guiche)
     .sort(([, a], [, b]) => (b.chamadoEm || 0) - (a.chamadoEm || 0))[0];
@@ -292,6 +315,14 @@ function verificarAtendimentoAtual() {
 function mostrarAtual(id, s) {
   senhaAtualId = id;
   senhaAtualDados = s;
+
+  // garante que o seletor mostre o guichê deste atendimento
+  if (s.guiche && selectGuiche.value !== s.guiche) {
+    if (![...selectGuiche.options].some(o => o.value === s.guiche)) {
+      selectGuiche.insertAdjacentHTML("beforeend", `<option value="${esc(s.guiche)}">${esc(s.guiche)}</option>`);
+    }
+    selectGuiche.value = s.guiche;
+  }
 
   dadosAtual.innerHTML = `
     <strong class="atual-nome">${esc(s.nome)}</strong>
@@ -570,6 +601,14 @@ btnAvisos.addEventListener("click", () => {
     atualizarBotaoAvisos();
     if (p === "granted") {
       mostrarAviso("Avisos ativados! Você será avisado de senhas novas mesmo em outra tela.");
+      // aviso de teste: o atendente já vê como vai aparecer
+      try {
+        new Notification("✅ Avisos ativados", {
+          body: "É assim que vai aparecer quando chegar uma senha nova.",
+          tag: "teste-avisos-bpa"
+        });
+      } catch (e) {}
+      tocarSom();
     }
   });
 });
@@ -703,3 +742,32 @@ function limparHistoricoAntigo() {
 
 setTimeout(limparHistoricoAntigo, 5000);
 setInterval(limparHistoricoAntigo, 60 * 60 * 1000);
+
+/* =========================================================
+   SENHAS ESQUECIDAS
+   Senha aguardando ou em atendimento há mais de 12 horas é
+   removida da fila (motorista foi embora / ninguém encerrou).
+   Assim a placa fica liberada para tirar senha nova.
+   ========================================================= */
+const HORAS_SENHA_ESQUECIDA = 12;
+
+function limparSenhasEsquecidas() {
+  if (!senhasCarregadas) return;
+  const limite = Date.now() - HORAS_SENHA_ESQUECIDA * 60 * 60 * 1000;
+  const apagar = {};
+
+  Object.entries(senhas).forEach(([id, s]) => {
+    if (s.status !== "aguardando" && s.status !== "chamando") return;
+    const desde = s.status === "chamando" ? (s.chamadoEm || s.criadoEm) : s.criadoEm;
+    if (desde && desde < limite) apagar[id] = null;
+  });
+
+  const total = Object.keys(apagar).length;
+  if (!total) return;
+  db.ref(`${refBase}/senhas`).update(apagar)
+    .then(() => console.log(`${total} senha(s) esquecida(s) há mais de ${HORAS_SENHA_ESQUECIDA}h removida(s).`))
+    .catch(err => console.warn("Limpeza de senhas esquecidas não executada:", err));
+}
+
+setTimeout(limparSenhasEsquecidas, 8000);
+setInterval(limparSenhasEsquecidas, 30 * 60 * 1000);
