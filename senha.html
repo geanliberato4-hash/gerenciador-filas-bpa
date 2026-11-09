@@ -27,11 +27,8 @@
       <p>Escolha abaixo para gerar sua senha</p>
     </header>
 
-    <section class="filas">
-      <button class="btn-fila" data-key="atendimento">Atendimento</button>
-      <button class="btn-fila" data-key="checklist">Check-list</button>
-      <button class="btn-fila" data-key="descarga">Descarga</button>
-      <button class="btn-fila" data-key="pendencia">Pendência operacional</button>
+    <section class="filas" id="listaFilas">
+      <p class="carregando-filas">Carregando atendimentos…</p>
     </section>
 
     <footer class="footer">
@@ -39,19 +36,53 @@
     </footer>
 
   </main>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="js/config.js"></script>
+  <script src="js/manter-tela.js"></script>
+
 <script>
-  const botoes = document.querySelectorAll(".btn-fila");
+  /* Os botões vêm do banco (área do administrador), em tempo real:
+     fila criada aparece, fila desativada some, sem recarregar o totem. */
+  const listaFilas = document.getElementById("listaFilas");
 
-  botoes.forEach(botao => {
-    botao.addEventListener("click", () => {
-      const filaKey = botao.dataset.key;
-      const filaNome = botao.innerText.trim();
+  function escolherFila(key, nome) {
+    localStorage.setItem("atendimentoKey", key);
+    localStorage.setItem("atendimentoNome", nome);
+    window.location.href = "dados.html";
+  }
 
-      localStorage.setItem("atendimentoKey", filaKey);
-      localStorage.setItem("atendimentoNome", filaNome);
-
-      window.location.href = "dados.html";
+  function montarBotoes(filas) {
+    listaFilas.innerHTML = "";
+    if (!filas.length) {
+      const p = document.createElement("p");
+      p.className = "carregando-filas";
+      p.textContent = "Nenhum atendimento disponível no momento.";
+      listaFilas.appendChild(p);
+      return;
+    }
+    filas.forEach(f => {
+      const btn = document.createElement("button");
+      btn.className = "btn-fila";
+      btn.dataset.key = f.key;
+      btn.textContent = f.nome;
+      btn.addEventListener("click", () => escolherFila(f.key, f.nome));
+      listaFilas.appendChild(btn);
     });
+  }
+
+  db.ref(`unidades/${UNIDADE}/filas`).on("value", snap => {
+    const filas = [];
+    snap.forEach(c => {
+      const f = c.val();
+      if (f && f.ativa) filas.push({ key: c.key, nome: f.nome || c.key, ordem: typeof f.ordem === "number" ? f.ordem : 999 });
+    });
+    filas.sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome, "pt-BR"));
+    montarBotoes(filas);
+  }, err => {
+    console.error(err);
+    listaFilas.innerHTML = '<p class="carregando-filas">Sem conexão. Tente novamente em instantes.</p>';
   });
 </script>
 
