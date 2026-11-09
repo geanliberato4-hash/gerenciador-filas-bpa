@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login do Administrador • BPA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/senha.css">
+</head>
+
+<body>
+
+  <div class="background"></div>
+  <div class="overlay"></div>
+
+  <main class="container">
+
+    <div></div>
+
+    <div class="card">
+      <header class="card-header">
+        <h1>Área do Administrador</h1>
+        <p>Entre com seu e-mail e senha</p>
+      </header>
+
+      <form class="card-body" id="formLogin" novalidate>
+        <input id="email" type="email" placeholder="E-mail" class="input" autocomplete="username" autofocus>
+        <input id="senha" type="password" placeholder="Senha" class="input" autocomplete="current-password">
+
+        <button class="btn-fila btn-gerar" id="btnEntrar" type="submit">Entrar</button>
+
+        <button class="link-voltar link-botao" id="btnEsqueci" type="button">Esqueci minha senha</button>
+
+        <div id="msg" class="msg" role="alert" style="display:none;"></div>
+      </form>
+    </div>
+
+    <footer class="footer">
+      <span>Sistema de filas inteligente • BPA</span>
+    </footer>
+
+  </main>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script src="js/config.js"></script>
+  <script src="js/admin-login.js"></script>
+
+</body>
+</html>
