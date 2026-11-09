@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Administração • BPA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body class="verificando">
+
+  <div class="background"></div>
+  <div class="overlay"></div>
+
+  <header class="topo">
+    <div>
+      <h1>Administração</h1>
+      <p>Unidade BPA • Filas e guichês</p>
+    </div>
+    <div class="topo-acoes">
+      <span class="usuario" id="usuario"></span>
+      <a class="btn-sec" href="atendente.html" target="_blank">Abrir painel</a>
+      <a class="btn-sec" href="senha.html" target="_blank">Abrir totem</a>
+      <button class="btn-sec" id="btnSair" type="button">Sair</button>
+    </div>
+  </header>
+
+  <main class="conteudo">
+
+    <!-- SEM PERMISSÃO -->
+    <section class="card oculto" id="semPermissao">
+      <h2>Sem permissão</h2>
+      <p>Este usuário não é o administrador do sistema.</p>
+    </section>
+
+    <div id="areaAdmin" class="oculto">
+
+      <!-- RESUMO -->
+      <section class="card">
+        <div class="card-titulo">
+          <h2>Resumo</h2>
+          <select id="diaResumo" class="select"></select>
+        </div>
+        <div class="numeros" id="numeros"></div>
+        <div class="tabelas">
+          <div>
+            <h3>Por fila</h3>
+            <table class="tabela" id="tabFilas"></table>
+          </div>
+          <div>
+            <h3>Por guichê</h3>
+            <table class="tabela" id="tabGuiches"></table>
+          </div>
+        </div>
+        <small class="dica">O histórico guarda os últimos 7 dias. Tempo de espera = da senha até ser chamado. Tempo de atendimento = da chamada até encerrar.</small>
+      </section>
+
+      <!-- FILAS -->
+      <section class="card">
+        <h2>Filas</h2>
+        <p class="dica">Mude o nome e clique fora (ou Enter) para salvar. As setas mudam a ordem dos botões no totem. Tudo aparece no totem e no painel na hora.</p>
+        <form class="nova-fila" id="formNovaFila" autocomplete="off">
+          <input id="nomeNovaFila" type="text" maxlength="40" placeholder="Nome da nova fila (ex.: Balança)">
+          <button class="btn-pri" type="submit">Criar fila</button>
+        </form>
+        <div id="listaFilas" class="lista-filas">
+          <p class="vazio">Carregando…</p>
+        </div>
+      </section>
+
+      <!-- GUICHÊS -->
+      <section class="card">
+        <h2>Guichês</h2>
+        <p class="dica">São as opções que os atendentes escolhem no painel. O nome é o que a TV anuncia ("dirigir-se ao …").</p>
+        <form class="nova-fila" id="formNovoGuiche" autocomplete="off">
+          <input id="nomeNovoGuiche" type="text" maxlength="30" placeholder="Nome do novo guichê (ex.: Guichê 3)">
+          <button class="btn-pri" type="submit">Criar guichê</button>
+        </form>
+        <div id="listaGuiches" class="lista-filas">
+          <p class="vazio">Carregando…</p>
+        </div>
+      </section>
+
+      <!-- LIMPAR FILA -->
+      <section class="card card-perigo">
+        <h2>Limpar fila</h2>
+        <p class="dica">Para emergências: senhas de teste, senhas presas ou zerar a fila. Não pode ser desfeito.</p>
+        <div class="limpar">
+          <select id="limparFila" class="select"></select>
+          <select id="limparTipo" class="select">
+            <option value="aguardando">Só quem está aguardando</option>
+            <option value="chamando">Só quem está em atendimento</option>
+            <option value="ambos">Aguardando e em atendimento</option>
+          </select>
+          <button class="btn-perigo" type="button" id="btnLimpar">Limpar</button>
+        </div>
+        <p class="previa" id="previaLimpar"></p>
+      </section>
+
+    </div>
+
+  </main>
+
+  <div id="aviso" class="aviso oculto" role="status"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+
+</body>
+</html>
