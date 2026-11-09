@@ -217,3 +217,24 @@ body {
   text-align: left;
 }
 
+
+/* TOTEM: filas vindas do banco */
+.carregando-filas {
+  font-size: 15px;
+  color: rgba(255,255,255,.7);
+  padding: 18px 0;
+}
+
+/* LOGIN DO ADMINISTRADOR */
+.link-botao {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.msg.msg-ok {
+  background: rgba(46, 204, 113, .2);
+  border-color: rgba(46, 204, 113, .6);
+  color: #b5ffcf;
+}
