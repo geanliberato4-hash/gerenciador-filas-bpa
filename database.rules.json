@@ -8,7 +8,46 @@
 
         "filas": {
           ".read": true,
-          ".write": false
+
+          "$fila": {
+            ".write": "auth != null && auth.token.email === 'gean.liberato.4@gmail.com'",
+            ".validate": "newData.hasChildren(['nome', 'ativa'])",
+
+            "nome": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+            },
+            "ativa": {
+              ".validate": "newData.isBoolean()"
+            },
+            "ordem": {
+              ".validate": "newData.isNumber()"
+            },
+            "$outro": {
+              ".validate": false
+            }
+          }
+        },
+
+        "guiches": {
+          ".read": true,
+
+          "$guiche": {
+            ".write": "auth != null && auth.token.email === 'gean.liberato.4@gmail.com'",
+            ".validate": "newData.hasChildren(['nome', 'ativo'])",
+
+            "nome": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+            },
+            "ativo": {
+              ".validate": "newData.isBoolean()"
+            },
+            "ordem": {
+              ".validate": "newData.isNumber()"
+            },
+            "$outro": {
+              ".validate": false
+            }
+          }
         },
 
         "senhas": {
