@@ -42,13 +42,19 @@ function verificarSom() {
 }
 
 // 1) tenta ligar sozinho ao abrir (funciona no Chrome configurado pelo atalho)
+let houveToque = false;
+let somLiberadoSozinho = false;
 liberarSom();
-setTimeout(verificarSom, 800);
+setTimeout(() => {
+  // som ligou sem ninguém tocar na tela = TV aberta pelo atalho
+  if (verificarSom() && !houveToque) somLiberadoSozinho = true;
+}, 800);
 if (audioCtx) audioCtx.onstatechange = verificarSom;
 
 // 2) se o navegador bloquear, qualquer toque, clique ou tecla libera
 ["click", "touchstart", "keydown"].forEach(ev =>
   document.addEventListener(ev, () => {
+    houveToque = true;
     liberarSom();
     if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
@@ -223,3 +229,18 @@ function falar(s, aoTerminar) {
   speechSynthesis.speak(fala);
 }
 
+
+// ================= ATUALIZAÇÃO DE MADRUGADA =================
+// A TV recarrega sozinha uma vez por dia, às 3h, para pegar as
+// atualizações do sistema. Só faz isso se o som liga sem toque
+// (TV aberta pelo atalho); senão ficaria muda até alguém tocar.
+setInterval(() => {
+  const agora = new Date();
+  if (agora.getHours() !== 3 || anunciando || !somLiberadoSozinho) return;
+  const hoje = agora.toDateString();
+  let ultima = null;
+  try { ultima = sessionStorage.getItem("tvRecarregadaEm"); } catch (e) {}
+  if (ultima === hoje) return;
+  try { sessionStorage.setItem("tvRecarregadaEm", hoje); } catch (e) {}
+  location.reload();
+}, 60 * 1000);
