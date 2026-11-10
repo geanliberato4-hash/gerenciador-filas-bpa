@@ -30,8 +30,12 @@
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.55);
+      background: rgba(0,0,0,0.12);
+      transition: background .6s ease;
     }
+
+    /* escurece só enquanto uma chamada está na tela (para destacar o nome) */
+    body.chamando .overlay { background: rgba(0,0,0,0.6); }
 
     /* RELÓGIO */
     .relogio {
