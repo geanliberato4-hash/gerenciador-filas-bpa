@@ -615,10 +615,13 @@ function renderizarMidias() {
     const personalizada = !!(m && m.versao);
     const quando = personalizada && m.em ? new Date(m.em).toLocaleDateString("pt-BR") : "";
     let previa;
+    const ytId = personalizada && m.tipo === "video/youtube" ? idYoutube(m.nome) : null;
     if (t.tipo === "video") {
-      previa = personalizada
-        ? `<div class="previa-midia previa-video">🎬<small>${esc(m.nome || "vídeo")}<br>${tamanhoTexto(m.tamanho)}</small></div>`
-        : `<video class="previa-midia" src="video/fundo.mp4" muted loop autoplay playsinline></video>`;
+      previa = ytId
+        ? `<div class="previa-midia previa-yt" style="background-image:url('https://i.ytimg.com/vi/${ytId}/hqdefault.jpg')"><span>▶</span></div>`
+        : personalizada
+          ? `<div class="previa-midia previa-video">🎬<small>${esc(m.nome || "vídeo")}<br>${tamanhoTexto(m.tamanho)}</small></div>`
+          : `<video class="previa-midia" src="video/fundo.mp4" muted loop autoplay playsinline></video>`;
     } else {
       const url = personalizada ? (previaCache[t.tela] && previaCache[t.tela].versao === m.versao ? previaCache[t.tela].url : "") : "img/fundo.jpg";
       previa = url
@@ -632,9 +635,11 @@ function renderizarMidias() {
         <div class="midia-info">
           <strong>${esc(t.nome)}</strong>
           <small>${esc(t.desc)}</small>
-          <span class="midia-estado">${personalizada
-            ? `<span class="tag-on">● Personalizada</span> desde ${esc(quando)}`
-            : `<span class="tag-off">○ Original</span>`}</span>
+          <span class="midia-estado">${ytId
+            ? `<span class="tag-on">● YouTube</span> desde ${esc(quando)}`
+            : personalizada
+              ? `<span class="tag-on">● Personalizada</span> desde ${esc(quando)}`
+              : `<span class="tag-off">○ Original</span>`}</span>
           ${progresso ? `<span class="midia-progresso">${esc(progresso)}</span>` : ""}
           <div class="linha-botoes">
             <label class="btn-pri ${progresso ? "desativado" : ""}">
@@ -643,11 +648,20 @@ function renderizarMidias() {
             </label>
             <button class="btn-sec" type="button" data-voltar="${t.tela}" ${personalizada && !progresso ? "" : "disabled"}>Voltar ao original</button>
           </div>
+          ${t.tipo === "video" ? `
+          <div class="linha-youtube">
+            <input type="url" class="campo-yt" data-yt-input placeholder="Ou cole um link do YouTube" value="${ytId ? esc(m.nome) : ""}">
+            <button class="btn-sec" type="button" data-yt="${t.tela}">Usar link</button>
+          </div>` : ""}
         </div>
       </div>`;
   }).join("");
 
   // carrega a miniatura das imagens personalizadas (uma vez por versão)
+  midiasEl.querySelectorAll("[data-yt-input]").forEach(campo => {
+    campo.onkeydown = e => { if (e.key === "Enter") campo.nextElementSibling.click(); };
+  });
+
   TELAS_MIDIA.filter(t => t.tipo === "imagem").forEach(t => {
     const m = midiaMeta[t.tela];
     if (!m || !m.versao) return;
@@ -659,6 +673,29 @@ function renderizarMidias() {
       renderizarMidias();
     });
   });
+}
+
+function idYoutube(texto) {
+  const m = String(texto || "").match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// TV: usar um vídeo do YouTube (repete sozinho, sem som) em vez de um arquivo
+function usarYoutube(tela, link) {
+  const id = idYoutube(link);
+  if (!id) {
+    mostrarAviso("Link do YouTube inválido. Copie o endereço do vídeo (ex.: https://youtu.be/...).", "erro");
+    return;
+  }
+  refMidia.child(tela).set({
+    versao: "yt" + Date.now().toString(36),
+    tipo: "video/youtube",
+    nome: `https://youtu.be/${id}`,
+    em: firebase.database.ServerValue.TIMESTAMP
+  })
+    .then(() => refMidiaDados.child(tela).remove())
+    .then(() => mostrarAviso("A TV vai passar o vídeo do YouTube, repetindo e sem som."))
+    .catch(erroFirebase);
 }
 
 async function baixarMidia(tela, meta) {
@@ -763,6 +800,12 @@ midiasEl.addEventListener("change", e => {
 });
 
 midiasEl.addEventListener("click", e => {
+  const btnYt = e.target.closest("button[data-yt]");
+  if (btnYt) {
+    const campo = btnYt.closest(".linha-youtube").querySelector("[data-yt-input]");
+    usarYoutube(btnYt.dataset.yt, campo.value.trim());
+    return;
+  }
   const btn = e.target.closest("button[data-voltar]");
   if (!btn) return;
   const tela = btn.dataset.voltar;
