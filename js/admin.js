@@ -293,6 +293,7 @@ function iniciar() {
   iniciarRecado();
   iniciarTesteTv();
   iniciarMidias();
+  iniciarVoz();
 }
 
 function contarSenhas(filtro) {
@@ -824,3 +825,123 @@ function iniciarMidias() {
     renderizarMidias();
   }, erroFirebase);
 }
+
+/* =========================================================
+   VOZ DA TV (voz, velocidade, repetir) e ATUALIZAR TELAS
+   ========================================================= */
+const vozNome = document.getElementById("vozNome");
+const vozVelocidade = document.getElementById("vozVelocidade");
+const vozRepetir = document.getElementById("vozRepetir");
+const statusVoz = document.getElementById("statusVoz");
+let vozSalva = { nome: "", velocidade: 0.9, repetir: false };
+let vozesDaTv = [];
+let vozAlterada = false;   // não sobrescreve o que o admin está mexendo
+
+function textoVelocidade(v) {
+  if (v < 0.8) return `mais devagar (${v.toFixed(2)})`;
+  if (v > 1.0) return `mais rápido (${v.toFixed(2)})`;
+  return `normal (${v.toFixed(2)})`;
+}
+
+function vozesDaqui() {
+  try {
+    return speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("pt"));
+  } catch (e) { return []; }
+}
+
+function montarVozes() {
+  const atual = vozAlterada ? vozNome.value : vozSalva.nome;
+  // vozes da TV; se a TV ainda não informou, mostra as deste computador
+  const nomes = vozesDaTv.length ? vozesDaTv.slice() : vozesDaqui().map(v => v.name);
+  if (atual && !nomes.includes(atual)) nomes.push(atual);
+  vozNome.innerHTML = `<option value="">Automática (português do Brasil)</option>` +
+    nomes.map(n => `<option value="${esc(n)}">${esc(n)}${!vozesDaTv.length || vozesDaTv.includes(n) ? "" : " (não encontrada na TV)"}</option>`).join("") +
+    (vozesDaTv.length ? "" : `<option value="" disabled>— a TV ainda não informou as vozes dela —</option>`);
+  vozNome.value = atual;
+}
+
+function mostrarVozSalva() {
+  if (vozAlterada) return;
+  vozVelocidade.value = vozSalva.velocidade;
+  vozRepetir.checked = vozSalva.repetir;
+  document.getElementById("vozVelTexto").textContent = textoVelocidade(Number(vozSalva.velocidade));
+  montarVozes();
+}
+
+function iniciarVoz() {
+  refConfig.child("voz").on("value", snap => {
+    const v = snap.val() || {};
+    vozSalva = { nome: String(v.nome || ""), velocidade: Number(v.velocidade) || 0.9, repetir: !!v.repetir };
+    mostrarVozSalva();
+  }, erroFirebase);
+  refConfig.child("vozesTv").on("value", snap => {
+    const v = snap.val() || {};
+    vozesDaTv = Object.values(v.lista || {}).map(String);
+    montarVozes();
+  });
+  refConfig.child("recarregar").on("value", snap => {
+    const t = snap.val();
+    if (!t) return;
+    const hora = new Date(t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    document.getElementById("statusRecarregar").textContent = `Último pedido: hoje às ${hora}.`;
+  });
+}
+
+[vozNome, vozVelocidade, vozRepetir].forEach(el => el.addEventListener("input", () => {
+  vozAlterada = true;
+  document.getElementById("vozVelTexto").textContent = textoVelocidade(Number(vozVelocidade.value));
+  statusVoz.innerHTML = `<span class="tag-alerta">Alterações ainda não salvas.</span>`;
+}));
+
+function salvarVoz() {
+  return refConfig.child("voz").set({
+    nome: vozNome.value,
+    velocidade: Math.round(Number(vozVelocidade.value) * 100) / 100,
+    repetir: vozRepetir.checked,
+    em: firebase.database.ServerValue.TIMESTAMP
+  }).then(() => {
+    vozAlterada = false;
+    statusVoz.innerHTML = `<span class="tag-on">✓ Voz salva.</span> A TV já usa na próxima chamada.`;
+  });
+}
+
+document.getElementById("btnSalvarVoz").onclick = () => salvarVoz().catch(erroFirebase);
+document.getElementById("btnOuvirVoz").onclick = () => {
+  (vozAlterada ? salvarVoz() : Promise.resolve())
+    .then(() => document.getElementById("btnTestarTv").click())
+    .catch(erroFirebase);
+};
+
+document.getElementById("btnRecarregarTelas").onclick = () => {
+  refConfig.child("recarregar").set(firebase.database.ServerValue.TIMESTAMP)
+    .then(() => mostrarAviso("Pedido enviado. As telas recarregam em alguns segundos."))
+    .catch(erroFirebase);
+};
+
+// ouvir a voz escolhida NESTE computador, sem mudar nada na TV
+if ("speechSynthesis" in window && speechSynthesis.addEventListener) {
+  speechSynthesis.addEventListener("voiceschanged", () => { if (!vozesDaTv.length) montarVozes(); });
+}
+
+document.getElementById("btnOuvirAqui").onclick = () => {
+  if (!("speechSynthesis" in window)) { mostrarAviso("Este navegador não tem voz. Use \"Ouvir na TV\".", "erro"); return; }
+  const vozes = vozesDaqui();
+  const escolhida = vozNome.value;
+  const voz = (escolhida && vozes.find(v => v.name === escolhida)) ||
+    vozes.find(v => v.lang.toLowerCase().startsWith("pt-br")) || vozes[0] || null;
+  const texto = "Motorista João, placa A B C 1 D 2 3, dirigir-se ao Guichê 1";
+  const vezes = vozRepetir.checked ? 2 : 1;
+  const dizer = restantes => {
+    const fala = new SpeechSynthesisUtterance(texto);
+    fala.lang = (voz && voz.lang) || "pt-BR";
+    fala.rate = Number(vozVelocidade.value) || 0.9;
+    if (voz) fala.voice = voz;
+    fala.onend = () => { if (restantes > 1) setTimeout(() => dizer(restantes - 1), 1200); };
+    speechSynthesis.speak(fala);
+  };
+  speechSynthesis.cancel();
+  dizer(vezes);
+  statusVoz.innerHTML = escolhida && !vozes.some(v => v.name === escolhida)
+    ? `<span class="tag-alerta">Essa voz não existe neste computador</span>, então tocou a voz padrão daqui. Para ouvir a voz exata, use "Ouvir na TV".`
+    : `Tocando aqui${voz ? `: ${esc(voz.name)}` : ""}. A TV não foi alterada.`;
+};
