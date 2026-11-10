@@ -228,6 +228,44 @@ function tocarAviso() {
 }
 
 // ================= VOZ =================
+// Ajustes escolhidos na Administração: voz, velocidade e repetir a chamada
+let vozConfig = { nome: "", velocidade: 0.9, repetir: false };
+db.ref(`unidades/${UNIDADE}/config/voz`).on("value", snap => {
+  const v = snap.val() || {};
+  vozConfig = {
+    nome: String(v.nome || ""),
+    velocidade: Math.min(1.4, Math.max(0.6, Number(v.velocidade) || 0.9)),
+    repetir: !!v.repetir
+  };
+});
+
+function escolherVoz() {
+  const vozes = speechSynthesis.getVoices();
+  return (vozConfig.nome && vozes.find(v => v.name === vozConfig.nome)) ||
+    vozes.find(v => v.lang && v.lang.toLowerCase().startsWith("pt-br")) ||
+    vozes.find(v => v.lang && v.lang.toLowerCase().startsWith("pt")) || null;
+}
+
+// a TV informa quais vozes em português ela tem (aparecem na Administração)
+let vozesInformadas = "";
+function informarVozes() {
+  try {
+    const lista = speechSynthesis.getVoices()
+      .filter(v => v.lang && v.lang.toLowerCase().startsWith("pt"))
+      .map(v => String(v.name).slice(0, 100))
+      .slice(0, 30);
+    const chave = JSON.stringify(lista);
+    if (!lista.length || chave === vozesInformadas) return;
+    vozesInformadas = chave;
+    db.ref(`unidades/${UNIDADE}/config/vozesTv`).set({ lista, em: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
+  } catch (e) {}
+}
+if ("speechSynthesis" in window) {
+  speechSynthesis.addEventListener && speechSynthesis.addEventListener("voiceschanged", informarVozes);
+  setTimeout(informarVozes, 2000);
+  setInterval(informarVozes, 10 * 60 * 1000);
+}
+
 function falar(s, aoTerminar) {
   let terminou = false;
   const fim = () => {
@@ -241,24 +279,28 @@ function falar(s, aoTerminar) {
   const texto = s.teste
     ? "Teste de som da tela de chamada. Se você está ouvindo esta mensagem, está tudo funcionando."
     : `Motorista ${s.nome}, placa ${placaFalada}, dirigir-se ao ${s.guiche}`;
+  const vezes = vozConfig.repetir ? 2 : 1;
 
   // garantia: se o navegador não avisar que terminou, segue mesmo assim
-  setTimeout(fim, Math.min(20000, 3000 + texto.length * 110));
+  const estimado = (3000 + texto.length * 110) / vozConfig.velocidade;
+  setTimeout(fim, Math.min(45000, estimado * vezes + (vezes - 1) * 1200));
 
   if (!somAtivo || !("speechSynthesis" in window)) { setTimeout(fim, 4000); return; }
 
-  const fala = new SpeechSynthesisUtterance(texto);
-  fala.lang = "pt-BR";
-  fala.rate = 0.9;
-  fala.pitch = 1;
-  fala.onend = fim;
-  fala.onerror = fim;
-
-  const vozBR = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith("pt-br"));
-  if (vozBR) fala.voice = vozBR;
+  const voz = escolherVoz();
+  const dizer = restantes => {
+    const fala = new SpeechSynthesisUtterance(texto);
+    fala.lang = (voz && voz.lang) || "pt-BR";
+    fala.rate = vozConfig.velocidade;
+    fala.pitch = 1;
+    if (voz) fala.voice = voz;
+    fala.onend = () => (restantes > 1 ? setTimeout(() => dizer(restantes - 1), 1200) : fim());
+    fala.onerror = fim;
+    speechSynthesis.speak(fala);
+  };
 
   speechSynthesis.cancel();
-  speechSynthesis.speak(fala);
+  dizer(vezes);
 }
 
 
