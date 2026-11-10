@@ -31,3 +31,7 @@ REGRAS DE SEGURANÇA
   * Senha nova só entra como "aguardando", com placa válida, fila existente
     e sem campos extras (ninguém consegue "chamar" uma senha falsa na TV ao criá-la).
   * Nada pode ser gravado fora de unidades/BPA.
+
+ATALHO PAINEL <-> ADMINISTRAÇÃO
+- No painel do atendente, o botão "⚙️ Admin" abre a administração na mesma aba.
+- Na administração (e no login), "← Voltar ao painel" volta para o painel.
