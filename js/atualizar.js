@@ -49,8 +49,9 @@
     return partes.join("|");
   }
 
-  function momentoSeguro() {
-    if (document.visibilityState === "visible" && Date.now() - ultimoToque < PARADO_MS) return false;
+  function momentoSeguro(forcado) {
+    // pedido da Administração ("Atualizar todas as telas agora") não espera os 30 s parado
+    if (!forcado && document.visibilityState === "visible" && Date.now() - ultimoToque < PARADO_MS) return false;
 
     // alguém digitando?
     const ativo = document.activeElement;
@@ -68,11 +69,12 @@
     return true;
   }
 
-  function recarregarQuandoPuder() {
+  function recarregarQuandoPuder(forcado) {
     if (aguardandoMomento) return;
     aguardandoMomento = true;
     const tentar = () => {
-      if (!momentoSeguro()) { setTimeout(tentar, 10 * 1000); return; }
+      if (!momentoSeguro(forcado)) { setTimeout(tentar, (forcado ? 2 : 10) * 1000); return; }
+      if (forcado) { location.reload(); return; }
       // trava contra recarregar em sequência
       try {
         const ultima = Number(sessionStorage.getItem("autoAtualizadoEm") || 0);
@@ -93,6 +95,18 @@
     if (atual === assinaturaNova) { recarregarQuandoPuder(); return; }
     assinaturaNova = atual; // confirma na próxima verificação
     setTimeout(verificar, 60 * 1000);
+  }
+
+  // botão "Atualizar todas as telas agora" da Administração
+  if (window.db && window.UNIDADE && TELA && TELA !== "admin") {
+    let pedidoVisto = null;
+    window.db.ref(`unidades/${window.UNIDADE}/config/recarregar`).on("value", snap => {
+      const pedido = snap.val() || 0;
+      if (pedidoVisto === null) { pedidoVisto = pedido; return; } // ignora pedidos antigos ao abrir
+      if (pedido === pedidoVisto) return;
+      pedidoVisto = pedido;
+      recarregarQuandoPuder(true);
+    }, () => {});
   }
 
   setTimeout(verificar, 20 * 1000);
