@@ -39,6 +39,15 @@
 
     <div id="areaAdmin" class="oculto">
 
+      <!-- AGORA (ao vivo) -->
+      <section class="card">
+        <div class="card-titulo">
+          <h2>Agora</h2>
+          <span class="dica-inline" id="aoVivoTotal"></span>
+        </div>
+        <div id="aoVivo" class="ao-vivo"><p class="vazio">Carregando…</p></div>
+      </section>
+
       <!-- RESUMO -->
       <section class="card">
         <div class="card-titulo">
@@ -56,7 +65,39 @@
             <table class="tabela" id="tabGuiches"></table>
           </div>
         </div>
+        <h3 class="titulo-grafico">Senhas por hora <span id="picoTexto"></span></h3>
+        <div id="graficoHoras" class="grafico-horas"></div>
         <small class="dica">O histórico guarda os últimos 7 dias. Tempo de espera = da senha até ser chamado. Tempo de atendimento = da chamada até encerrar.</small>
+      </section>
+
+      <!-- TELAS: RECADO E TESTE DA TV -->
+      <section class="card">
+        <h2>Recado e teste da TV</h2>
+        <div class="telas-grid">
+          <div>
+            <h3>Recado no totem e na TV</h3>
+            <p class="dica">Aparece numa faixa amarela no topo do totem e da TV até você tirar.</p>
+            <textarea id="textoRecado" class="campo-texto" maxlength="140" rows="2" placeholder="Ex.: Balança em manutenção até 14h"></textarea>
+            <div class="linha-botoes">
+              <button class="btn-pri" type="button" id="btnMostrarRecado">Mostrar recado</button>
+              <button class="btn-sec" type="button" id="btnTirarRecado">Tirar recado</button>
+            </div>
+            <p class="previa" id="statusRecado"></p>
+          </div>
+          <div>
+            <h3>Testar a TV</h3>
+            <p class="dica">A TV mostra uma chamada de teste e fala uma frase. Nenhum motorista é chamado.</p>
+            <button class="btn-pri" type="button" id="btnTestarTv">🔊 Testar TV</button>
+            <p class="previa" id="statusTesteTv"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- IMAGENS E VÍDEO -->
+      <section class="card">
+        <h2>Imagens e vídeo das telas</h2>
+        <p class="dica">Cada tela pode ter a sua imagem de fundo. A troca aparece em todos os aparelhos em poucos segundos, sem recarregar. "Voltar ao original" devolve a imagem (ou o vídeo) de antes.</p>
+        <div class="midias" id="midias"></div>
       </section>
 
       <!-- FILAS -->
@@ -113,6 +154,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script src="js/config.js"></script>
+  <script src="js/midia.js" data-tela="admin"></script>
   <script src="js/admin.js"></script>
 
 </body>
