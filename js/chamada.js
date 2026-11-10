@@ -111,6 +111,7 @@ function proximoAnuncio() {
   // pula senhas que foram encerradas/devolvidas antes da vez delas
   let item;
   while ((item = filaAnuncios.shift())) {
+    if (item.teste) { item.dados = { teste: true, nome: "Teste", placa: "", guiche: "" }; break; }
     const s = senhasAtuais[item.id];
     if (s && s.status === "chamando") { item.dados = s; break; }
   }
@@ -130,6 +131,7 @@ function proximoAnuncio() {
 
   setTimeout(() => {
     falar(s, () => {
+      if (s.teste) confirmarTeste();
       // cada chamada fica pelo menos 6 s na tela, com uma pausa antes da próxima
       const restante = Math.max(0, 6000 - (Date.now() - inicio));
       setTimeout(proximoAnuncio, restante + 1500);
@@ -137,11 +139,37 @@ function proximoAnuncio() {
   }, 900);
 }
 
+// ================= TESTE DA TV (botão na Administração) =================
+// O administrador pede um teste; a TV anuncia uma chamada de teste
+// (sem motorista) e responde dizendo se o som está liberado.
+let testeVisto = null;
+db.ref(`unidades/${UNIDADE}/config/testeTv`).on("value", snap => {
+  const pedido = snap.val();
+  if (testeVisto === null) { testeVisto = pedido || 0; return; } // ignora pedidos antigos ao abrir
+  if (!pedido || pedido === testeVisto) return;
+  testeVisto = pedido;
+  if (!filaAnuncios.some(f => f.teste)) filaAnuncios.push({ id: "__teste", teste: true });
+  if (!anunciando) proximoAnuncio();
+});
+
+function confirmarTeste() {
+  db.ref(`unidades/${UNIDADE}/config/testeTvOk`).set({
+    em: firebase.database.ServerValue.TIMESTAMP,
+    som: !!somAtivo
+  }).catch(() => {});
+}
+
 // ================= UI =================
 function mostrarChamada(s) {
-  nomeEl.textContent = `Motorista ${s.nome}`;
-  placaEl.textContent = `Placa ${s.placa}`;
-  guicheEl.textContent = `Dirigir-se ao ${s.guiche}`;
+  if (s.teste) {
+    nomeEl.textContent = "🔊 Teste da TV";
+    placaEl.textContent = "Se você está ouvindo, o som está funcionando";
+    guicheEl.textContent = "Nenhum motorista foi chamado";
+  } else {
+    nomeEl.textContent = `Motorista ${s.nome}`;
+    placaEl.textContent = `Placa ${s.placa}`;
+    guicheEl.textContent = `Dirigir-se ao ${s.guiche}`;
+  }
 
   // reinicia a animação
   cardEl.style.animation = "none";
@@ -155,7 +183,7 @@ function mostrarChamada(s) {
     chamadaBox.style.display = "none";
   }, 30000);
 
-  registrarUltima(s);
+  if (!s.teste) registrarUltima(s);
 }
 
 function registrarUltima(s) {
@@ -208,7 +236,9 @@ function falar(s, aoTerminar) {
 
   // soletra a placa para ficar mais claro (ex.: "A B C 1 D 2 3")
   const placaFalada = String(s.placa || "").split("").join(" ");
-  const texto = `Motorista ${s.nome}, placa ${placaFalada}, dirigir-se ao ${s.guiche}`;
+  const texto = s.teste
+    ? "Teste de som da tela de chamada. Se você está ouvindo esta mensagem, está tudo funcionando."
+    : `Motorista ${s.nome}, placa ${placaFalada}, dirigir-se ao ${s.guiche}`;
 
   // garantia: se o navegador não avisar que terminou, segue mesmo assim
   setTimeout(fim, Math.min(20000, 3000 + texto.length * 110));
