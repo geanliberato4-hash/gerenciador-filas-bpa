@@ -346,3 +346,13 @@ body.verificando > *:not(.background):not(.overlay) { visibility: hidden; }
 .midia .btn-pri, .midia .btn-sec { font-size: 12px; padding: 7px 10px; }
 label.btn-pri { display: inline-block; cursor: pointer; }
 label.btn-pri.desativado { opacity: .4; pointer-events: none; }
+.linha-youtube { display: flex; gap: 6px; margin-top: 8px; }
+.campo-yt {
+  flex: 1; min-width: 0; padding: 7px 9px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.35); color: #fff; font-size: 12px;
+}
+.campo-yt:focus { outline: none; border-color: #6cff9a; }
+.previa-yt { position: relative; display: flex; align-items: center; justify-content: center; }
+.previa-yt span {
+  background: rgba(255,0,0,.85); color: #fff; border-radius: 8px; padding: 2px 10px; font-size: 16px;
+}
