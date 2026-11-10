@@ -109,27 +109,75 @@
     return m ? m[1] : null;
   }
 
+  // O quadro do YouTube fica INVISÍVEL até o vídeo começar a tocar de verdade.
+  // Assim, se o YouTube pedir login ("confirme que não é um robô"), bloquear
+  // o vídeo ou der erro, isso nunca aparece na TV: ela continua no vídeo
+  // normal e tenta o YouTube de novo mais tarde.
+  let ytAtual = null, ytTimer = null, ytRetentar = null, ytOuvindo = null;
+
   function aplicarYoutube(id) {
     const video = document.querySelector("video");
     let quadro = document.querySelector(".midia-youtube");
+    clearTimeout(ytTimer); clearTimeout(ytRetentar); clearInterval(ytOuvindo);
+    ytAtual = id;
     if (!id) {
       if (quadro) quadro.remove();
       if (video) { video.style.display = ""; video.play().catch(() => {}); }
       return;
     }
-    const src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}` +
-      "&controls=0&disablekb=1&fs=0&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3";
-    if (!quadro) {
-      quadro = document.createElement("iframe");
-      quadro.className = "midia-youtube";
-      quadro.setAttribute("allow", "autoplay; encrypted-media");
-      quadro.setAttribute("tabindex", "-1");
-      quadro.setAttribute("aria-hidden", "true");
-      if (video) video.before(quadro); else document.body.prepend(quadro);
-    }
-    if (quadro.getAttribute("src") !== src) quadro.setAttribute("src", src);
-    if (video) { video.pause(); video.style.display = "none"; }
+    if (quadro) quadro.remove();
+    if (video) { video.style.display = ""; video.play().catch(() => {}); }
+
+    const origem = encodeURIComponent(location.origin);
+    quadro = document.createElement("iframe");
+    quadro.className = "midia-youtube";
+    quadro.style.opacity = "0";
+    quadro.setAttribute("allow", "autoplay; encrypted-media");
+    quadro.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+    quadro.setAttribute("tabindex", "-1");
+    quadro.setAttribute("aria-hidden", "true");
+    quadro.src = `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}` +
+      "&controls=0&disablekb=1&fs=0&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3" +
+      `&enablejsapi=1&origin=${origem}`;
+    if (video) video.before(quadro); else document.body.prepend(quadro);
+
+    // pede ao player do YouTube para avisar quando começar a tocar
+    const ouvir = () => {
+      try { quadro.contentWindow.postMessage(JSON.stringify({ event: "listening", id: "tv", channel: "widget" }), "*"); } catch (e) {}
+    };
+    quadro.addEventListener("load", ouvir);
+    ytOuvindo = setInterval(ouvir, 1000);
+
+    // se em 30 s não estiver tocando: desiste por enquanto e tenta de novo em 15 min
+    ytTimer = setTimeout(() => {
+      if (ytAtual !== id || quadro.style.opacity === "1") return;
+      clearInterval(ytOuvindo);
+      quadro.remove();
+      ytRetentar = setTimeout(() => { if (ytAtual === id) aplicarYoutube(id); }, 15 * 60 * 1000);
+    }, 30 * 1000);
   }
+
+  window.addEventListener("message", e => {
+    if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin)) return;
+    let dados;
+    try { dados = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch (err) { return; }
+    const estado = dados && dados.info && dados.info.playerState;
+    const quadro = document.querySelector(".midia-youtube");
+    if (!quadro || e.source !== quadro.contentWindow) return;
+    if (dados.event === "onError") {
+      clearTimeout(ytTimer); clearInterval(ytOuvindo);
+      quadro.remove();
+      const id = ytAtual;
+      ytRetentar = setTimeout(() => { if (ytAtual === id) aplicarYoutube(id); }, 15 * 60 * 1000);
+      return;
+    }
+    if (estado === 1 && quadro.style.opacity !== "1") {   // 1 = tocando
+      clearTimeout(ytTimer); clearInterval(ytOuvindo);
+      quadro.style.opacity = "1";
+      const video = document.querySelector("video");
+      if (video) { video.pause(); video.style.display = "none"; }
+    }
+  });
 
   function aplicarVideo(url) {
     const video = document.querySelector("video");
