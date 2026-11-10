@@ -18,7 +18,17 @@
 
   // enquanto carrega a imagem personalizada, esconde a original (não pisca)
   const estilo = document.createElement("style");
-  estilo.textContent = ".midia-carregando .background, html.midia-carregando body { background-image: none !important; }";
+  estilo.textContent = `
+    .midia-carregando .background, html.midia-carregando body { background-image: none !important; }
+    .midia-frente {
+      position: fixed; inset: 0; z-index: -2; pointer-events: none;
+      background: center / contain no-repeat;
+    }
+    .midia-youtube {
+      position: fixed; top: 50%; left: 50%; border: 0; pointer-events: none;
+      width: max(100vw, 177.78vh); height: max(56.25vw, 100vh);
+      transform: translate(-50%, -50%);
+    }`;
   document.head.appendChild(estilo);
   const CHAVE_LOCAL = `midia_${TELA}`;
   let urlAtual = null;
@@ -64,14 +74,61 @@
     return nova;
   }
 
+  // A imagem personalizada aparece INTEIRA (sem cortar nem esticar), centralizada.
+  // O espaço que sobra nas laterais é preenchido com a mesma imagem desfocada.
   function aplicarImagem(url) {
     const valor = url ? `url("${url}")` : "";
     const fundo = document.querySelector(".background");
     // no painel e na administração o fundo fica no <body> (o .background herda);
     // no totem fica direto no .background
     document.body.style.backgroundImage = (TELA === "painel" || TELA === "admin") ? valor : "";
-    if (fundo) fundo.style.backgroundImage = valor;
+    if (fundo) {
+      fundo.style.backgroundImage = valor;
+      fundo.style.backgroundSize = url ? "cover" : "";
+      fundo.style.backgroundPosition = url ? "center" : "";
+      fundo.style.filter = url ? "blur(18px)" : "";
+      fundo.style.transform = url ? "scale(1.15)" : "";
+    }
+    let frente = document.querySelector(".midia-frente");
+    if (url) {
+      if (!frente) {
+        frente = document.createElement("div");
+        frente.className = "midia-frente";
+        if (fundo) fundo.after(frente); else document.body.prepend(frente);
+      }
+      frente.style.backgroundImage = valor;
+    } else if (frente) {
+      frente.remove();
+    }
     document.documentElement.classList.remove("midia-carregando");
+  }
+
+  // ---------- vídeo do YouTube na TV (repete, sem som) ----------
+  function idYoutube(texto) {
+    const m = String(texto || "").match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function aplicarYoutube(id) {
+    const video = document.querySelector("video");
+    let quadro = document.querySelector(".midia-youtube");
+    if (!id) {
+      if (quadro) quadro.remove();
+      if (video) { video.style.display = ""; video.play().catch(() => {}); }
+      return;
+    }
+    const src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}` +
+      "&controls=0&disablekb=1&fs=0&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3";
+    if (!quadro) {
+      quadro = document.createElement("iframe");
+      quadro.className = "midia-youtube";
+      quadro.setAttribute("allow", "autoplay; encrypted-media");
+      quadro.setAttribute("tabindex", "-1");
+      quadro.setAttribute("aria-hidden", "true");
+      if (video) video.before(quadro); else document.body.prepend(quadro);
+    }
+    if (quadro.getAttribute("src") !== src) quadro.setAttribute("src", src);
+    if (video) { video.pause(); video.style.display = "none"; }
   }
 
   function aplicarVideo(url) {
@@ -89,7 +146,7 @@
 
   function aplicar(blob) {
     const url = trocarUrl(blob);
-    if (TELA === "tv") aplicarVideo(url);
+    if (TELA === "tv") { aplicarYoutube(null); aplicarVideo(url); }
     else aplicarImagem(url);
   }
 
@@ -135,6 +192,19 @@
       return;
     }
     if (meta.versao === versaoAplicada) return;
+
+    // link do YouTube (só na TV): não baixa nada, o vídeo vem direto do YouTube
+    if (meta.tipo === "video/youtube") {
+      const id = idYoutube(meta.nome);
+      if (TELA !== "tv" || !id) return;
+      versaoAplicada = meta.versao;
+      lembrar(null);
+      gravarCache(null);
+      trocarUrl(null);
+      aplicarVideo(null);
+      aplicarYoutube(id);
+      return;
+    }
 
     let cache = await lerCache();
     if (!cache || cache.versao !== meta.versao) {
