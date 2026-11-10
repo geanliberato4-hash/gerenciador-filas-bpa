@@ -26,7 +26,14 @@
 
       <form class="card-body" id="formSenha" autocomplete="off" novalidate>
         <input id="nome" type="text" placeholder="Nome do motorista" class="input" maxlength="40" autofocus>
-        <input id="placa" type="text" placeholder="Placa do veículo" class="input input-placa" autocapitalize="characters" inputmode="text">
+        <div class="aviso-carreta" role="note">
+          <span class="aviso-carreta-icone">⚠️</span>
+          <div>
+            <strong>Use a placa da 1ª CARRETA</strong>
+            <span>Não é a placa do cavalo (caminhão)</span>
+          </div>
+        </div>
+        <input id="placa" type="text" placeholder="Placa da 1ª carreta" aria-label="Placa da 1ª carreta" class="input input-placa" autocapitalize="characters" inputmode="text">
         <small class="dica-placa">Padrão antigo ABC1234 ou Mercosul ABC1D23</small>
 
         <button class="btn-fila btn-gerar" id="btnGerar" type="submit">
@@ -134,7 +141,7 @@
       }
 
       if (!placaValida(placa)) {
-        mostrarMensagem("Placa inválida. Use o padrão ABC1234 ou Mercosul ABC1D23");
+        mostrarMensagem("Placa da 1ª carreta inválida. Use o padrão ABC1234 ou Mercosul ABC1D23");
         placaInput.focus();
         return;
       }
