@@ -279,3 +279,70 @@ body.verificando > *:not(.background):not(.overlay) { visibility: hidden; }
 .previa { margin-top: 10px; font-size: 13px; opacity: .85; }
 
 .tabelas + .dica { margin-top: 16px; }
+
+/* ===== AGORA (ao vivo) ===== */
+.dica-inline { font-size: 13px; opacity: .8; }
+.ao-vivo { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.vivo-fila { background: rgba(255,255,255,.05); border-radius: 12px; padding: 10px 12px; }
+.vivo-fila h3 { font-size: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.vivo-fila h3 span { opacity: .7; font-weight: 400; }
+.vivo-item {
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "placa nome tempo" "estado estado estado";
+  gap: 2px 8px; padding: 7px 9px; margin-bottom: 6px; border-radius: 8px;
+  background: rgba(0,0,0,.3); border-left: 3px solid #2ecc71; font-size: 13px;
+}
+.vivo-item b { grid-area: placa; letter-spacing: .5px; }
+.vivo-item .vivo-nome { grid-area: nome; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vivo-item .vivo-tempo { grid-area: tempo; font-weight: 600; }
+.vivo-item .vivo-estado { grid-area: estado; font-size: 12px; opacity: .75; }
+.vivo-item.atencao { border-left-color: #f1c40f; }
+.vivo-item.chamando { border-left-color: #3498db; }
+.vivo-item.alerta { border-left-color: #e74c3c; }
+
+/* ===== SENHAS POR HORA ===== */
+.titulo-grafico { font-size: 14px; margin: 18px 0 8px; opacity: .85; }
+.titulo-grafico span { font-weight: 400; color: #ffe066; }
+.grafico-horas { display: flex; align-items: flex-end; gap: 4px; height: 150px; overflow-x: auto; padding-bottom: 2px; }
+.barra-hora { flex: 1 0 26px; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.barra-hora .qtd { font-size: 11px; height: 16px; opacity: .85; }
+.barra-hora .barra { flex: 1; width: 70%; display: flex; align-items: flex-end; }
+.barra-hora .barra div { width: 100%; background: rgba(108,255,154,.55); border-radius: 4px 4px 0 0; }
+.barra-hora.pico .barra div { background: #ffe066; }
+.barra-hora .hora { font-size: 10px; opacity: .65; margin-top: 4px; }
+
+/* ===== RECADO / TESTE / MÍDIAS ===== */
+.telas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.telas-grid h3, .midia-info strong { font-size: 15px; }
+.telas-grid .dica { margin: 4px 0 10px; }
+.campo-texto {
+  width: 100%; padding: 10px 12px; border-radius: 10px; resize: vertical;
+  border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.35); color: #fff;
+  font-family: inherit; font-size: 14px;
+}
+.campo-texto:focus { outline: none; border-color: #6cff9a; }
+.linha-botoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.linha-botoes button:disabled, .btn-pri:disabled { opacity: .4; cursor: default; }
+.tag-on { color: #6cff9a; font-weight: 600; }
+.tag-off { opacity: .7; font-weight: 600; }
+.tag-alerta { color: #ffb74d; font-weight: 600; }
+
+.midias { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.midia { display: flex; gap: 12px; background: rgba(255,255,255,.05); border-radius: 12px; padding: 12px; }
+.previa-midia {
+  flex: 0 0 120px; height: 80px; border-radius: 8px; object-fit: cover;
+  background: #111 center / cover no-repeat; border: 1px solid rgba(255,255,255,.15);
+}
+.previa-video, .previa-carregando {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 26px; text-align: center; overflow: hidden;
+}
+.previa-video small { font-size: 10px; opacity: .75; word-break: break-all; padding: 0 4px; }
+.previa-carregando { font-size: 12px; opacity: .6; }
+.midia-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.midia-info small { font-size: 12px; opacity: .7; }
+.midia-estado { font-size: 12px; }
+.midia-progresso { font-size: 12px; color: #ffe066; }
+.midia .linha-botoes { margin-top: 6px; }
+.midia .btn-pri, .midia .btn-sec { font-size: 12px; padding: 7px 10px; }
+label.btn-pri { display: inline-block; cursor: pointer; }
+label.btn-pri.desativado { opacity: .4; pointer-events: none; }
