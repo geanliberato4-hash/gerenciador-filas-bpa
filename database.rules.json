@@ -100,6 +100,28 @@
             ".write": "auth != null && auth.token.email === 'gean.liberato.4@gmail.com'",
             ".validate": "newData.isNumber() && newData.val() <= now + 60000"
           },
+          "recarregar": {
+            ".write": "auth != null && auth.token.email === 'gean.liberato.4@gmail.com'",
+            ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          },
+          "voz": {
+            ".write": "auth != null && auth.token.email === 'gean.liberato.4@gmail.com'",
+            ".validate": "newData.hasChildren(['velocidade', 'repetir'])",
+            "nome": { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "velocidade": { ".validate": "newData.isNumber() && newData.val() >= 0.5 && newData.val() <= 1.5" },
+            "repetir": { ".validate": "newData.isBoolean()" },
+            "em": { ".validate": "newData.isNumber()" },
+            "$outro": { ".validate": false }
+          },
+          "vozesTv": {
+            ".write": true,
+            ".validate": "newData.hasChildren(['lista'])",
+            "lista": {
+              "$i": { ".validate": "newData.isString() && newData.val().length <= 100" }
+            },
+            "em": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+            "$outro": { ".validate": false }
+          },
           "testeTvOk": {
             ".write": true,
             ".validate": "newData.hasChildren(['em', 'som'])",
