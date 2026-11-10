@@ -177,10 +177,12 @@ function mostrarChamada(s) {
   cardEl.style.animation = "";
 
   chamadaBox.style.display = "flex";
+  document.body.classList.add("chamando");
 
   clearTimeout(timeoutOcultar);
   timeoutOcultar = setTimeout(() => {
     chamadaBox.style.display = "none";
+    document.body.classList.remove("chamando");
   }, 30000);
 
   if (!s.teste) registrarUltima(s);
