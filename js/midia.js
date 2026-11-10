@@ -148,13 +148,13 @@
     quadro.addEventListener("load", ouvir);
     ytOuvindo = setInterval(ouvir, 1000);
 
-    // se em 30 s não estiver tocando: desiste por enquanto e tenta de novo em 15 min
+    // se em 2 min não estiver tocando (anúncio, login, bloqueio): desiste por enquanto e tenta de novo em 15 min
     ytTimer = setTimeout(() => {
       if (ytAtual !== id || quadro.style.opacity === "1") return;
       clearInterval(ytOuvindo);
       quadro.remove();
       ytRetentar = setTimeout(() => { if (ytAtual === id) aplicarYoutube(id); }, 15 * 60 * 1000);
-    }, 30 * 1000);
+    }, 120 * 1000);
   }
 
   window.addEventListener("message", e => {
