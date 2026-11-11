@@ -35,12 +35,24 @@
     return [...new Set(lista)];
   }
 
+  // Compara o CONTEÚDO dos arquivos (e não etag/data do servidor): em algumas
+  // redes (proxy da empresa) esses cabeçalhos mudam a cada consulta e a tela
+  // achava que tinha versão nova o tempo todo, recarregando sem parar.
+  function resumo(texto) {
+    let h = 5381;
+    for (let i = 0; i < texto.length; i++) h = ((h << 5) + h + texto.charCodeAt(i)) | 0;
+    return `${texto.length}.${(h >>> 0).toString(36)}`;
+  }
+
   async function assinatura() {
     const partes = await Promise.all(arquivos().map(async caminho => {
       try {
-        const r = await fetch(`${caminho}?v=${Date.now()}`, { method: "HEAD", cache: "no-store" });
-        if (!r.ok) return `${caminho}:x`;
-        return `${caminho}:${r.headers.get("etag") || r.headers.get("last-modified") || r.headers.get("content-length") || ""}`;
+        const r = await fetch(`${caminho}?v=${Date.now()}`, { cache: "no-store" });
+        if (!r.ok) return null; // erro passageiro: não decide nada agora
+        const texto = await r.text();
+        // página de bloqueio/erro do proxy no lugar do arquivo: ignora
+        if (/\.js$/.test(caminho) && /^\s*</.test(texto)) return null;
+        return `${caminho}:${resumo(texto)}`;
       } catch (e) {
         return null; // sem internet: não decide nada agora
       }
