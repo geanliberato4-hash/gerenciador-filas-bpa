@@ -88,12 +88,25 @@ function toggleHistorico() {
 // Enquanto o admin não cadastrar nenhum, usa Guichê 1 e Guichê 2.
 const GUICHES_PADRAO = ["Guichê 1", "Guichê 2"];
 
+// Guarda o guichê escolhido neste computador. Grava em dois lugares porque
+// alguns computadores da empresa apagam o localStorage; o sessionStorage
+// continua valendo enquanto a aba estiver aberta (inclusive ao recarregar).
 function guicheSalvo() {
-  try { return localStorage.getItem("guicheAtendente"); } catch (e) { return null; }
+  let g = null;
+  try { g = sessionStorage.getItem("guicheAtendente"); } catch (e) {}
+  if (!g) { try { g = localStorage.getItem("guicheAtendente"); } catch (e) {} }
+  return g;
+}
+
+function salvarGuiche(nome) {
+  if (!nome) return;
+  try { sessionStorage.setItem("guicheAtendente", nome); } catch (e) {}
+  try { localStorage.setItem("guicheAtendente", nome); } catch (e) {}
 }
 
 function montarGuiches(nomes) {
-  const atual = guicheTravado ? selectGuiche.value : (selectGuiche.value || guicheSalvo());
+  // o guichê escolhido pelo atendente vale mais que o primeiro da lista
+  const atual = guicheTravado ? selectGuiche.value : (guicheSalvo() || selectGuiche.value);
   const lista = nomes.slice();
   // guichê em uso (travado) continua na lista mesmo se o admin mudou algo
   if (guicheTravado && atual && !lista.includes(atual)) lista.push(atual);
@@ -114,9 +127,7 @@ db.ref(`${refBase}/guiches`).on("value", snap => {
   montarGuiches(lista.length ? lista.map(g => g.nome) : GUICHES_PADRAO);
 });
 
-selectGuiche.addEventListener("change", () => {
-  try { localStorage.setItem("guicheAtendente", selectGuiche.value); } catch (e) {}
-});
+selectGuiche.addEventListener("change", () => salvarGuiche(selectGuiche.value));
 
 function ativarGuiche() {
   if (guicheTravado) return;
@@ -323,6 +334,7 @@ function mostrarAtual(id, s) {
     }
     selectGuiche.value = s.guiche;
   }
+  salvarGuiche(s.guiche);
 
   dadosAtual.innerHTML = `
     <strong class="atual-nome">${esc(s.nome)}</strong>
