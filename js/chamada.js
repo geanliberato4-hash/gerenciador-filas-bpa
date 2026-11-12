@@ -297,6 +297,23 @@ if ("speechSynthesis" in window) {
   setInterval(informarVozes, 10 * 60 * 1000);
 }
 
+// Soletra a placa um caractere por vez, com pausa entre eles.
+// Cada letra vai escrita como se fala ("bê", "cê", "agá"...) e cada número
+// por extenso, senão a voz junta tudo ("ABC" vira palavra, "23" vira "vinte e três").
+const NOMES_LETRAS = {
+  A: "á", B: "bê", C: "cê", D: "dê", E: "é", F: "éfe", G: "gê", H: "agá", I: "í",
+  J: "jota", K: "cá", L: "éle", M: "ême", N: "êne", O: "ó", P: "pê", Q: "quê",
+  R: "érre", S: "ésse", T: "tê", U: "u", V: "vê", W: "dáblio", X: "xis",
+  Y: "ípsilon", Z: "zê"
+};
+const NOMES_NUMEROS = ["zero", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
+
+function soletrarPlaca(placa) {
+  return String(placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").split("")
+    .map(c => /[0-9]/.test(c) ? NOMES_NUMEROS[Number(c)] : (NOMES_LETRAS[c] || c))
+    .join(", ");
+}
+
 function falar(s, aoTerminar) {
   let terminou = false;
   const fim = () => {
@@ -305,11 +322,10 @@ function falar(s, aoTerminar) {
     if (aoTerminar) aoTerminar();
   };
 
-  // soletra a placa para ficar mais claro (ex.: "A B C 1 D 2 3")
-  const placaFalada = String(s.placa || "").split("").join(" ");
+  const placaFalada = soletrarPlaca(s.placa);
   const texto = s.teste
     ? "Teste de som da tela de chamada. Se você está ouvindo esta mensagem, está tudo funcionando."
-    : `Motorista ${s.nome}, placa ${placaFalada}, dirigir-se ao ${s.guiche}`;
+    : `Motorista ${s.nome}. Placa: ${placaFalada}. Dirigir-se ao ${s.guiche}.`;
   const vezes = vozConfig.repetir ? 2 : 1;
 
   // garantia: se o navegador não avisar que terminou, segue mesmo assim
