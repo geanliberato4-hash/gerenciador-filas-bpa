@@ -160,14 +160,43 @@ function confirmarTeste() {
 }
 
 // ================= UI =================
+// Desenha a placa: Mercosul (faixa azul BRASIL) ou modelo antigo (cinza, ABC-1234)
+function placaDesenhada(placa) {
+  const p = String(placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const antiga = /^[A-Z]{3}[0-9]{4}$/.test(p);
+  const el = document.createElement("span");
+  el.className = "placa-br" + (antiga ? " antiga" : "");
+  const faixa = document.createElement("span");
+  faixa.className = "faixa";
+  if (antiga) {
+    faixa.textContent = "BRASIL";
+  } else {
+    const br = document.createElement("i");
+    br.textContent = "BR";
+    const pais = document.createElement("span");
+    pais.textContent = "BRASIL";
+    const bandeira = document.createElement("i");
+    bandeira.textContent = "🇧🇷";
+    faixa.append(br, pais, bandeira);
+  }
+  const letras = document.createElement("span");
+  letras.className = "letras";
+  letras.textContent = antiga ? `${p.slice(0, 3)}-${p.slice(3)}` : (p || String(placa || ""));
+  el.append(faixa, letras);
+  return el;
+}
+
 function mostrarChamada(s) {
+  const tituloEl = document.getElementById("chamandoTitulo");
   if (s.teste) {
+    if (tituloEl) tituloEl.textContent = "Teste";
     nomeEl.textContent = "🔊 Teste da TV";
     placaEl.textContent = "Se você está ouvindo, o som está funcionando";
     guicheEl.textContent = "Nenhum motorista foi chamado";
   } else {
+    if (tituloEl) tituloEl.textContent = "Chamando";
     nomeEl.textContent = `Motorista ${s.nome}`;
-    placaEl.textContent = `Placa ${s.placa}`;
+    placaEl.replaceChildren(placaDesenhada(s.placa));
     guicheEl.textContent = `Dirigir-se ao ${s.guiche}`;
   }
 
@@ -196,12 +225,14 @@ function registrarUltima(s) {
   historicoTela.length = Math.min(historicoTela.length, 4);
 
   ultimasEl.innerHTML = "";
+  document.body.classList.toggle("tem-ultimas", historicoTela.length > 0);
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Últimas chamadas";
+  ultimasEl.appendChild(titulo);
   historicoTela.forEach(h => {
     const item = document.createElement("div");
     item.className = "item";
-    const b = document.createElement("b");
-    b.textContent = h.placa;
-    item.appendChild(b);
+    item.appendChild(placaDesenhada(h.placa));
     item.appendChild(document.createTextNode(`${h.nome} • ${h.guiche}`));
     ultimasEl.appendChild(item);
   });
