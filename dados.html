@@ -72,6 +72,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/app-totem.js"></script>
+  <script src="js/filas-visual.js"></script>
   <script src="js/atualizar.js" data-tela="totem"></script>
   <script src="js/midia.js" data-tela="totem"></script>
   <script src="js/recado.js" data-tela="totem"></script>
@@ -89,7 +90,23 @@
     if (!atendimento) {
       window.location.href = "senha.html";
     } else {
-      titulo.innerText = localStorage.getItem("atendimentoNome") || "Atendimento";
+      const nomeFila = localStorage.getItem("atendimentoNome") || "Atendimento";
+      // mesmo ícone e cor do botão escolhido no totem
+      let visual = null;
+      try { visual = JSON.parse(localStorage.getItem("atendimentoVisual") || "null"); } catch (e) {}
+      if (!visual && window.visualFila) visual = visualFila(nomeFila, 0);
+      titulo.textContent = "";
+      const pilula = document.createElement("span");
+      pilula.className = "fila-escolhida";
+      if (visual) {
+        pilula.style.setProperty("--cor-fila", visual.cor);
+        const icone = document.createElement("span");
+        icone.className = "icone";
+        icone.textContent = visual.icone;
+        pilula.appendChild(icone);
+      }
+      pilula.appendChild(document.createTextNode(nomeFila));
+      titulo.appendChild(pilula);
     }
 
     /* ================= PLACA =================
