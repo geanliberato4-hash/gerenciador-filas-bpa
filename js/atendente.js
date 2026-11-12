@@ -199,8 +199,9 @@ function renderizar() {
 
   let total = 0;
 
-  filasDiv.innerHTML = filas.map(f => {
+  filasDiv.innerHTML = filas.map((f, indice) => {
     const lista = porFila[f.key];
+    const visual = window.visualFila ? visualFila(f.nome, indice) : { icone: "", cor: "#6cff9a" };
     total += lista.length;
 
     const cards = lista.length
@@ -216,8 +217,8 @@ function renderizar() {
       : `<p class="vazio">Ninguém aguardando</p>`;
 
     return `
-      <div class="coluna" id="${esc(f.key)}">
-        <h3>${esc(f.nome)} <span class="contador">${lista.length}</span></h3>
+      <div class="coluna" id="${esc(f.key)}" style="--cor-fila:${esc(visual.cor)}">
+        <h3><span class="icone-fila">${esc(visual.icone)}</span> ${esc(f.nome)} <span class="contador">${lista.length}</span></h3>
         ${cards}
       </div>`;
   }).join("");
@@ -247,8 +248,9 @@ filasDiv.addEventListener("click", e => {
 */
 
 function renderizarEmAtendimento() {
+  // o atendimento deste guichê já aparece na faixa do topo: não repete aqui
   const lista = Object.entries(senhas)
-    .filter(([, s]) => s.status === "chamando")
+    .filter(([id, s]) => s.status === "chamando" && id !== senhaAtualId)
     .sort(([, a], [, b]) => (a.chamadoEm || 0) - (b.chamadoEm || 0));
 
   if (!lista.length) {
@@ -344,6 +346,7 @@ function mostrarAtual(id, s) {
 
   ativarGuiche();
   atualDiv.classList.remove("oculto");
+  renderizarEmAtendimento();
 }
 
 /* ================= CHAMAR ================= */
@@ -435,6 +438,7 @@ function limparAtual() {
   senhaAtualId = null;
   senhaAtualDados = null;
   atualDiv.classList.add("oculto");
+  renderizarEmAtendimento();
   dadosAtual.innerHTML = "";
 }
 
