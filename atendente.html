@@ -48,6 +48,18 @@
 
   <main class="conteudo">
 
+    <!-- ATENDIMENTO ATUAL (deste guichê): fica no topo, sem cobrir as filas -->
+    <section id="atual" class="atual oculto" aria-live="polite">
+      <h2>Atendimento em andamento</h2>
+      <div id="dadosAtual"></div>
+
+      <div class="acoes">
+        <button class="btn rechamar" type="button" onclick="rechamar()">Rechamar</button>
+        <button class="btn voltar" type="button" onclick="voltarFila()">Voltar para fila</button>
+        <button class="btn finalizar" type="button" onclick="finalizar()">Encerrar</button>
+      </div>
+    </section>
+
     <!-- EM ATENDIMENTO (todos os guichês) -->
     <section id="emAtendimento" class="em-atendimento oculto"></section>
 
@@ -57,18 +69,6 @@
     </section>
 
   </main>
-
-  <!-- ATENDIMENTO ATUAL -->
-  <section id="atual" class="atual oculto" aria-live="polite">
-    <h2>Atendimento em andamento</h2>
-    <div id="dadosAtual"></div>
-
-    <div class="acoes">
-      <button class="btn rechamar" type="button" onclick="rechamar()">Rechamar</button>
-      <button class="btn voltar" type="button" onclick="voltarFila()">Voltar para fila</button>
-      <button class="btn finalizar" type="button" onclick="finalizar()">Encerrar</button>
-    </div>
-  </section>
 
   <!-- HISTÓRICO -->
   <section class="historico">
@@ -89,6 +89,7 @@
   <script src="js/config.js"></script>
   <script src="js/atualizar.js" data-tela="painel"></script>
   <script src="js/midia.js" data-tela="painel"></script>
+  <script src="js/filas-visual.js"></script>
   <script src="js/atendente.js"></script>
 
 </body>
