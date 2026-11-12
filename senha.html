@@ -30,7 +30,7 @@
 
     <header class="header">
       <h1>Selecione o atendimento</h1>
-      <p>Escolha abaixo para gerar sua senha</p>
+      <p>Toque no atendimento desejado para gerar sua senha</p>
     </header>
 
     <section class="filas" id="listaFilas">
@@ -47,6 +47,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="js/config.js"></script>
   <script src="js/app-totem.js"></script>
+  <script src="js/filas-visual.js"></script>
   <script src="js/atualizar.js" data-tela="totem"></script>
   <script src="js/midia.js" data-tela="totem"></script>
   <script src="js/recado.js" data-tela="totem"></script>
@@ -57,9 +58,10 @@
      fila criada aparece, fila desativada some, sem recarregar o totem. */
   const listaFilas = document.getElementById("listaFilas");
 
-  function escolherFila(key, nome) {
+  function escolherFila(key, nome, visual) {
     localStorage.setItem("atendimentoKey", key);
     localStorage.setItem("atendimentoNome", nome);
+    if (visual) localStorage.setItem("atendimentoVisual", JSON.stringify(visual));
     window.location.href = "dados.html";
   }
 
@@ -72,12 +74,23 @@
       listaFilas.appendChild(p);
       return;
     }
-    filas.forEach(f => {
+    filas.forEach((f, i) => {
       const btn = document.createElement("button");
       btn.className = "btn-fila";
       btn.dataset.key = f.key;
-      btn.textContent = f.nome;
-      btn.addEventListener("click", () => escolherFila(f.key, f.nome));
+      const visual = window.visualFila ? visualFila(f.nome, i) : { icone: "🎫", cor: "#1db954" };
+      btn.style.setProperty("--cor-fila", visual.cor);
+      const icone = document.createElement("span");
+      icone.className = "btn-fila-icone";
+      icone.textContent = visual.icone;
+      const texto = document.createElement("span");
+      texto.className = "btn-fila-texto";
+      texto.textContent = f.nome;
+      const seta = document.createElement("span");
+      seta.className = "btn-fila-seta";
+      seta.textContent = "›";
+      btn.append(icone, texto, seta);
+      btn.addEventListener("click", () => escolherFila(f.key, f.nome, visual));
       listaFilas.appendChild(btn);
     });
   }
