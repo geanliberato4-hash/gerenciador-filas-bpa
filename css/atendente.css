@@ -626,3 +626,60 @@ body {
 }
 
 .btn-adm:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+/* ===== ATENDIMENTO ATUAL NO TOPO (não cobre mais as filas) ===== */
+.conteudo > .atual {
+  position: static;
+  transform: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px 24px;
+  margin-bottom: 20px;
+  padding: 16px 22px;
+  border: 2px solid rgba(108,255,154,.55);
+  background: linear-gradient(135deg, rgba(29,185,84,.22), rgba(0,0,0,.75));
+  animation: aparecerTopo .25s ease;
+}
+@keyframes aparecerTopo {
+  from { transform: translateY(-8px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+.conteudo > .atual h2 {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  writing-mode: horizontal-tb;
+}
+.conteudo > .atual #dadosAtual {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 4px 16px;
+  margin: 0;
+  text-align: left;
+}
+.conteudo > .atual .atual-placa {
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+}
+.conteudo > .atual .acoes .btn { padding: 12px 18px; white-space: nowrap; }
+.conteudo > .atual.oculto { display: none; }
+
+@media (max-width: 900px) {
+  .conteudo > .atual { grid-template-columns: 1fr; }
+}
+
+/* ===== COR DE CADA FILA NAS COLUNAS ===== */
+.coluna {
+  --cor-fila: #6cff9a;
+  border-top: 5px solid var(--cor-fila);
+}
+.coluna h3 { color: color-mix(in srgb, var(--cor-fila) 70%, #fff); }
+.coluna h3 .icone-fila { font-size: 20px; }
+.coluna .contador { background: var(--cor-fila); color: #fff; }
