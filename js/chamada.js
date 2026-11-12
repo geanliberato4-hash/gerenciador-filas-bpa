@@ -297,7 +297,8 @@ if ("speechSynthesis" in window) {
   setInterval(informarVozes, 10 * 60 * 1000);
 }
 
-// Soletra a placa um caractere por vez, com pausa entre eles.
+// Soletra a placa um caractere por vez, num ritmo corrido: as 3 letras
+// juntas, uma pausa curta, e depois o resto (ex.: "á bê cê, um dê dois três").
 // Cada letra vai escrita como se fala ("bê", "cê", "agá"...) e cada número
 // por extenso, senão a voz junta tudo ("ABC" vira palavra, "23" vira "vinte e três").
 const NOMES_LETRAS = {
@@ -309,9 +310,11 @@ const NOMES_LETRAS = {
 const NOMES_NUMEROS = ["zero", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
 
 function soletrarPlaca(placa) {
-  return String(placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").split("")
-    .map(c => /[0-9]/.test(c) ? NOMES_NUMEROS[Number(c)] : (NOMES_LETRAS[c] || c))
-    .join(", ");
+  const nome = c => /[0-9]/.test(c) ? NOMES_NUMEROS[Number(c)] : (NOMES_LETRAS[c] || c);
+  const p = String(placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").split("");
+  const inicio = p.slice(0, 3).map(nome).join(" ");
+  const resto = p.slice(3).map(nome).join(" ");
+  return resto ? `${inicio}, ${resto}` : inicio;
 }
 
 function falar(s, aoTerminar) {
@@ -325,7 +328,7 @@ function falar(s, aoTerminar) {
   const placaFalada = soletrarPlaca(s.placa);
   const texto = s.teste
     ? "Teste de som da tela de chamada. Se você está ouvindo esta mensagem, está tudo funcionando."
-    : `Motorista ${s.nome}. Placa: ${placaFalada}. Dirigir-se ao ${s.guiche}.`;
+    : `Motorista ${s.nome}, placa ${placaFalada}. Dirigir-se ao ${s.guiche}.`;
   const vezes = vozConfig.repetir ? 2 : 1;
 
   // garantia: se o navegador não avisar que terminou, segue mesmo assim
