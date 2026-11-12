@@ -929,7 +929,8 @@ document.getElementById("btnOuvirAqui").onclick = () => {
   const escolhida = vozNome.value;
   const voz = (escolhida && vozes.find(v => v.name === escolhida)) ||
     vozes.find(v => v.lang.toLowerCase().startsWith("pt-br")) || vozes[0] || null;
-  const texto = "Motorista João, placa A B C 1 D 2 3, dirigir-se ao Guichê 1";
+  // mesmo jeito que a TV fala: placa soletrada, uma letra/número por vez
+  const texto = "Motorista João. Placa: á, bê, cê, um, dê, dois, três. Dirigir-se ao Guichê 1.";
   const vezes = vozRepetir.checked ? 2 : 1;
   const dizer = restantes => {
     const fala = new SpeechSynthesisUtterance(texto);
