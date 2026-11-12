@@ -139,13 +139,15 @@
   const estiloExtra = document.createElement("style");
   estiloExtra.textContent = `
     .totem-faixa-volta {
-      position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 140%);
+      position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 30px);
+      opacity: 0; visibility: hidden;
       max-width: calc(100% - 32px); padding: 14px 22px; border-radius: 14px;
       background: #f5c400; color: #1a1a1a; font-weight: 600; font-size: 1.05rem;
       text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.4);
-      transition: transform .3s ease; z-index: 9998; pointer-events: none;
+      transition: transform .3s ease, opacity .3s ease, visibility .3s;
+      z-index: 9998; pointer-events: none;
     }
-    .totem-faixa-volta.visivel { transform: translate(-50%, 0); }
+    .totem-faixa-volta.visivel { transform: translate(-50%, 0); opacity: 1; visibility: visible; }
     .totem-sem-rede {
       position: fixed; inset: 0; z-index: 9999; display: none;
       align-items: center; justify-content: center; padding: 24px;
