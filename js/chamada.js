@@ -277,6 +277,25 @@ function escolherVoz() {
     vozes.find(v => v.lang && v.lang.toLowerCase().startsWith("pt")) || null;
 }
 
+// Vozes "Online" (ex.: Microsoft Antônio Online) são geradas pela internet:
+// a cada chamada o áudio vem dos servidores da Microsoft e, na rede da empresa,
+// isso pode demorar vários segundos. Se a voz online não começar a falar
+// rápido, a TV usa uma voz do próprio computador (fala na hora) por 15 minutos
+// e depois tenta a online de novo.
+const ESPERA_VOZ_ONLINE = 1500;
+let vozOnlineLentaAte = 0;
+
+function vozDoComputador() {
+  const vozes = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("pt"));
+  const local = v => v.localService !== false && !/online/i.test(v.name);
+  return vozes.find(v => local(v) && v.lang.toLowerCase().startsWith("pt-br")) ||
+    vozes.find(local) || null;
+}
+
+function ehVozOnline(voz) {
+  return !!voz && (voz.localService === false || /online/i.test(voz.name));
+}
+
 // a TV informa quais vozes em português ela tem (aparecem na Administração)
 let vozesInformadas = "";
 function informarVozes() {
@@ -340,19 +359,24 @@ function falar(s, aoTerminar) {
 
   if (!somAtivo || !("speechSynthesis" in window)) { setTimeout(fim, 2500); return; }
 
-  const voz = escolherVoz();
+  let voz = escolherVoz();
+  if (ehVozOnline(voz) && Date.now() < vozOnlineLentaAte) voz = vozDoComputador() || voz;
   let falando = false;      // a voz chegou a começar?
   let comecouEm = Date.now();
   let ultimoEmpurrao = Date.now();
+  let tentativa = 0;        // cada fala tem um número; avisos de falas abandonadas são ignorados
+
   const dizer = restantes => {
+    const minha = ++tentativa;
     const fala = new SpeechSynthesisUtterance(texto);
     fala.lang = (voz && voz.lang) || "pt-BR";
     fala.rate = vozConfig.velocidade;
     fala.pitch = 1;
     if (voz) fala.voice = voz;
-    fala.onstart = () => { falando = true; };
+    let comecou = false;
+    fala.onstart = () => { if (minha === tentativa) { comecou = true; falando = true; } };
     fala.onend = () => {
-      if (terminou) return;
+      if (terminou || minha !== tentativa) return;
       if (restantes > 1) {
         // pausa entre a 1ª e a 2ª vez: o vigia não pode achar que acabou
         falando = false;
@@ -360,8 +384,24 @@ function falar(s, aoTerminar) {
         setTimeout(() => dizer(restantes - 1), 1000);
       } else fim();
     };
-    fala.onerror = fim;
+    fala.onerror = () => { if (minha === tentativa) fim(); };
     speechSynthesis.speak(fala);
+
+    // voz online demorando para começar: troca na hora pela voz do computador
+    if (ehVozOnline(voz)) {
+      setTimeout(() => {
+        if (terminou || minha !== tentativa || comecou) return;
+        const local = vozDoComputador();
+        if (!local) return;
+        vozOnlineLentaAte = Date.now() + 15 * 60 * 1000;
+        voz = local;
+        tentativa++;              // abandona a fala online
+        speechSynthesis.cancel();
+        falando = false;
+        comecouEm = Date.now();
+        dizer(restantes);
+      }, ESPERA_VOZ_ONLINE);
+    }
   };
 
   // O Chrome às vezes termina de falar e NÃO avisa (ou trava a voz).
