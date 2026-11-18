@@ -855,7 +855,7 @@ function montarVozes() {
   const nomes = vozesDaTv.length ? vozesDaTv.slice() : vozesDaqui().map(v => v.name);
   if (atual && !nomes.includes(atual)) nomes.push(atual);
   vozNome.innerHTML = `<option value="">Automática (português do Brasil)</option>` +
-    nomes.map(n => `<option value="${esc(n)}">${esc(n)}${!vozesDaTv.length || vozesDaTv.includes(n) ? "" : " (não encontrada na TV)"}</option>`).join("") +
+    nomes.map(n => `<option value="${esc(n)}">${esc(n)}${/online/i.test(n) ? " ⚠️ pela internet, pode atrasar" : " ✓ fala na hora"}${!vozesDaTv.length || vozesDaTv.includes(n) ? "" : " (não encontrada na TV)"}</option>`).join("") +
     (vozesDaTv.length ? "" : `<option value="" disabled>— a TV ainda não informou as vozes dela —</option>`);
   vozNome.value = atual;
 }
