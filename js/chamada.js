@@ -132,11 +132,11 @@ function proximoAnuncio() {
   setTimeout(() => {
     falar(s, () => {
       if (s.teste) confirmarTeste();
-      // cada chamada fica pelo menos 6 s na tela, com uma pausa antes da próxima
-      const restante = Math.max(0, 6000 - (Date.now() - inicio));
-      setTimeout(proximoAnuncio, restante + 1500);
+      // cada chamada fica pelo menos 5 s na tela, com uma pausa curta antes da próxima
+      const restante = Math.max(0, 5000 - (Date.now() - inicio));
+      setTimeout(proximoAnuncio, restante + 800);
     });
-  }, 900);
+  }, 700);
 }
 
 // ================= TESTE DA TV (botão na Administração) =================
@@ -319,9 +319,11 @@ function soletrarPlaca(placa) {
 
 function falar(s, aoTerminar) {
   let terminou = false;
+  let vigia = null;
   const fim = () => {
     if (terminou) return;
     terminou = true;
+    clearInterval(vigia);
     if (aoTerminar) aoTerminar();
   };
 
@@ -329,25 +331,59 @@ function falar(s, aoTerminar) {
   const texto = s.teste
     ? "Teste de som da tela de chamada. Se você está ouvindo esta mensagem, está tudo funcionando."
     : `Motorista ${s.nome}, placa ${placaFalada}. Dirigir-se ao ${s.guiche}.`;
-  const vezes = vozConfig.repetir ? 2 : 1;
+  // se já tem outro motorista esperando para ser chamado, não repete: chama o próximo logo
+  const vezes = vozConfig.repetir && !filaAnuncios.length ? 2 : 1;
 
-  // garantia: se o navegador não avisar que terminou, segue mesmo assim
-  const estimado = (3000 + texto.length * 110) / vozConfig.velocidade;
-  setTimeout(fim, Math.min(45000, estimado * vezes + (vezes - 1) * 1200));
+  // última garantia: se a voz travar de vez, segue mesmo assim
+  const estimado = (2000 + texto.length * 90) / vozConfig.velocidade;
+  setTimeout(fim, Math.min(40000, estimado * vezes + (vezes - 1) * 1000));
 
-  if (!somAtivo || !("speechSynthesis" in window)) { setTimeout(fim, 4000); return; }
+  if (!somAtivo || !("speechSynthesis" in window)) { setTimeout(fim, 2500); return; }
 
   const voz = escolherVoz();
+  let falando = false;      // a voz chegou a começar?
+  let comecouEm = Date.now();
+  let ultimoEmpurrao = Date.now();
   const dizer = restantes => {
     const fala = new SpeechSynthesisUtterance(texto);
     fala.lang = (voz && voz.lang) || "pt-BR";
     fala.rate = vozConfig.velocidade;
     fala.pitch = 1;
     if (voz) fala.voice = voz;
-    fala.onend = () => (restantes > 1 ? setTimeout(() => dizer(restantes - 1), 1200) : fim());
+    fala.onstart = () => { falando = true; };
+    fala.onend = () => {
+      if (terminou) return;
+      if (restantes > 1) {
+        // pausa entre a 1ª e a 2ª vez: o vigia não pode achar que acabou
+        falando = false;
+        comecouEm = Date.now() + 1000;
+        setTimeout(() => dizer(restantes - 1), 1000);
+      } else fim();
+    };
     fala.onerror = fim;
     speechSynthesis.speak(fala);
   };
+
+  // O Chrome às vezes termina de falar e NÃO avisa (ou trava a voz).
+  // Antes a TV ficava esperando até o tempo máximo e as próximas chamadas
+  // atrasavam. Agora ela confere a cada 300 ms se a voz ainda está falando.
+  vigia = setInterval(() => {
+    if (terminou) return;
+    const ocupada = speechSynthesis.speaking || speechSynthesis.pending;
+    if (ocupada) {
+      falando = true;
+      // truque contra a voz do Chrome que "congela" no meio
+      if (Date.now() - ultimoEmpurrao > 10000) {
+        ultimoEmpurrao = Date.now();
+        try { speechSynthesis.pause(); speechSynthesis.resume(); } catch (e) {}
+      }
+      return;
+    }
+    // já falou e parou, mas o aviso de "terminei" não veio
+    if (falando) { fim(); return; }
+    // a voz nem começou em 4 s: não fica esperando
+    if (Date.now() - comecouEm > 4000) fim();
+  }, 300);
 
   speechSynthesis.cancel();
   dizer(vezes);
