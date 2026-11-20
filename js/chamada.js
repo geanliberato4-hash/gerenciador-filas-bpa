@@ -335,8 +335,8 @@ if ("speechSynthesis" in window) {
   setInterval(informarVozes, 10 * 60 * 1000);
 }
 
-// Soletra a placa um caractere por vez, num ritmo corrido: as 3 letras
-// juntas, uma pausa curta, e depois o resto (ex.: "á bê cê, um dê dois três").
+// Soletra a placa um caractere por vez, num ritmo corrido e sem pausas
+// (ex.: "á bê cê um dê dois três"), para o guichê vir logo em seguida.
 // Cada letra vai escrita como se fala ("bê", "cê", "agá"...) e cada número
 // por extenso, senão a voz junta tudo ("ABC" vira palavra, "23" vira "vinte e três").
 const NOMES_LETRAS = {
@@ -352,7 +352,7 @@ function soletrarPlaca(placa) {
   const p = String(placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").split("");
   const inicio = p.slice(0, 3).map(nome).join(" ");
   const resto = p.slice(3).map(nome).join(" ");
-  return resto ? `${inicio}, ${resto}` : inicio;
+  return resto ? `${inicio} ${resto}` : inicio;
 }
 
 function falar(s, aoTerminar) {
@@ -368,7 +368,7 @@ function falar(s, aoTerminar) {
   const placaFalada = soletrarPlaca(s.placa);
   const texto = s.teste
     ? "Teste de som da tela de chamada. Se você está ouvindo esta mensagem, está tudo funcionando."
-    : `Motorista ${s.nome}, placa ${placaFalada}. Dirigir-se ao ${s.guiche}.`;
+    : `Motorista ${s.nome}, placa ${placaFalada}, dirigir-se ao ${s.guiche}.`;
   // se já tem outro motorista esperando para ser chamado, não repete: chama o próximo logo
   const vezes = vozConfig.repetir && !filaAnuncios.length ? 2 : 1;
 
