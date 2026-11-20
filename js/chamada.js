@@ -124,6 +124,7 @@ function proximoAnuncio() {
   anunciando = true;
   const s = item.dados;
   const inicio = Date.now();
+  avisoEm = inicio;
 
   if (audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
   mostrarChamada(s);
@@ -258,6 +259,24 @@ function tocarAviso() {
   } catch (e) {}
 }
 
+// ================= DIAGNÓSTICO =================
+// A TV conta para a Administração quanto tempo a voz levou para começar
+// depois do aviso sonoro, qual voz usou e qual versão do sistema está aberta.
+const VERSAO_TV = "2026-11-20";
+let avisoEm = 0;
+function informarDiagnostico(evento, extra) {
+  try {
+    db.ref(`unidades/${UNIDADE}/config/diagTv`).set(Object.assign({
+      evento,
+      versao: VERSAO_TV,
+      visivel: document.visibilityState === "visible",
+      somAuto: !!somLiberadoSozinho,
+      em: firebase.database.ServerValue.TIMESTAMP
+    }, extra || {})).catch(() => {});
+  } catch (e) {}
+}
+setTimeout(() => informarDiagnostico("abriu"), 3000);
+
 // ================= VOZ =================
 // Ajustes escolhidos na Administração: voz, velocidade e repetir a chamada
 let vozConfig = { nome: "", velocidade: 0.9, repetir: false };
@@ -374,7 +393,16 @@ function falar(s, aoTerminar) {
     fala.pitch = 1;
     if (voz) fala.voice = voz;
     let comecou = false;
-    fala.onstart = () => { if (minha === tentativa) { comecou = true; falando = true; } };
+    fala.onstart = () => {
+      if (minha !== tentativa) return;
+      if (!comecou && restantes === vezes && !s.teste) {
+        informarDiagnostico("chamada", {
+          atrasoVoz: Math.max(0, Date.now() - avisoEm),
+          voz: String((voz && voz.name) || "padrão do navegador").slice(0, 100)
+        });
+      }
+      comecou = true; falando = true;
+    };
     fala.onend = () => {
       if (terminou || minha !== tentativa) return;
       if (restantes > 1) {
@@ -422,7 +450,10 @@ function falar(s, aoTerminar) {
     // já falou e parou, mas o aviso de "terminei" não veio
     if (falando) { fim(); return; }
     // a voz nem começou em 4 s: não fica esperando
-    if (Date.now() - comecouEm > 4000) fim();
+    if (Date.now() - comecouEm > 4000) {
+      if (!s.teste) informarDiagnostico("chamada", { atrasoVoz: -1, voz: String((voz && voz.name) || "padrão do navegador").slice(0, 100) });
+      fim();
+    }
   }, 300);
 
   speechSynthesis.cancel();
