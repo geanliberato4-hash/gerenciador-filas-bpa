@@ -74,7 +74,9 @@
     try {
       if (TELA === "tv") {
         if (typeof anunciando !== "undefined" && anunciando) return false;
-        if (typeof somLiberadoSozinho !== "undefined" && !somLiberadoSozinho) return false;
+        // atualização automática só se o som liga sozinho; o botão "Atualizar todas
+        // as telas agora" recarrega mesmo assim (a TV pode pedir um toque para o som)
+        if (!forcado && typeof somLiberadoSozinho !== "undefined" && !somLiberadoSozinho) return false;
       }
       if (TELA === "admin" && typeof enviando !== "undefined" && Object.keys(enviando).length) return false;
     } catch (e) {}
