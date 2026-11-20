@@ -122,6 +122,18 @@
             "em": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
             "$outro": { ".validate": false }
           },
+          "diagTv": {
+            ".write": true,
+            ".validate": "newData.hasChildren(['evento', 'versao', 'em'])",
+            "evento": { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "versao": { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "visivel": { ".validate": "newData.isBoolean()" },
+            "somAuto": { ".validate": "newData.isBoolean()" },
+            "atrasoVoz": { ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 600000" },
+            "voz": { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "em": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+            "$outro": { ".validate": false }
+          },
           "testeTvOk": {
             ".write": true,
             ".validate": "newData.hasChildren(['em', 'som'])",
