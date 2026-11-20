@@ -879,6 +879,30 @@ function iniciarVoz() {
     vozesDaTv = Object.values(v.lista || {}).map(String);
     montarVozes();
   });
+  // diagnóstico enviado pela TV: versão aberta e atraso da voz na última chamada
+  const VERSAO_TV_ATUAL = "2026-11-20";
+  refConfig.child("diagTv").on("value", snap => {
+    const d = snap.val();
+    const el = document.getElementById("diagTv");
+    if (!el) return;
+    if (!d) {
+      el.textContent = "📺 ⚠️ A TV ainda não mandou notícias: ela está com uma versão antiga do sistema. Aperte F5 na TV (e toque na tela se pedir para ativar o som).";
+      return;
+    }
+    const quando = new Date(d.em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    const partes = [];
+    if (d.versao !== VERSAO_TV_ATUAL) partes.push("⚠️ TV com versão antiga, aperte F5 nela.");
+    if (d.evento === "chamada") {
+      partes.push(d.atrasoVoz < 0
+        ? `Última chamada (${quando}): a voz NÃO falou.`
+        : `Última chamada (${quando}): a voz começou ${(d.atrasoVoz / 1000).toFixed(1).replace(".", ",")} s depois do aviso.`);
+      if (d.voz) partes.push(`Voz usada: ${d.voz}.`);
+    } else {
+      partes.push(`TV aberta em ${quando}.`);
+    }
+    if (d.visivel === false) partes.push("⚠️ A tela de chamada estava escondida/minimizada.");
+    el.textContent = "📺 " + partes.join(" ");
+  });
   refConfig.child("recarregar").on("value", snap => {
     const t = snap.val();
     if (!t) return;
