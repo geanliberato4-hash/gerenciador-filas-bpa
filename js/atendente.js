@@ -663,18 +663,38 @@ function avisarSenhasNovas(novas) {
     : `${novas.length} senhas novas. Última: ${s.nome} • ${s.placa}`;
 
   try {
+    fecharNotificacao();
     const n = new Notification("🔔 Nova senha na fila", {
       body: corpo,
       tag: "nova-senha-bpa",
-      renotify: true,
-      requireInteraction: true
+      renotify: true
     });
     n.onclick = () => {
       window.focus();
       n.close();
     };
+    notificacaoAtual = n;
+    // some sozinha depois de alguns segundos (o título da aba continua piscando)
+    timerNotificacao = setTimeout(fecharNotificacao, NOTIFICACAO_SOME_EM);
   } catch (e) { /* alguns navegadores não deixam criar notificação aqui */ }
 }
+
+// A notificação de senha nova some sozinha depois de 10 s,
+// ou na hora em que o atendente volta para a tela do painel.
+const NOTIFICACAO_SOME_EM = 10 * 1000;
+let notificacaoAtual = null;
+let timerNotificacao = null;
+
+function fecharNotificacao() {
+  clearTimeout(timerNotificacao);
+  if (notificacaoAtual) {
+    try { notificacaoAtual.close(); } catch (e) {}
+    notificacaoAtual = null;
+  }
+}
+
+window.addEventListener("focus", fecharNotificacao);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) fecharNotificacao(); });
 
 function tocarSom() {
   if (!audioCtx || audioCtx.state !== "running") return;
